@@ -22,10 +22,10 @@
 | SEO | sitemap.xml | DONE | 현재 Vercel origin으로 생성. 2026-10-08 공개 HTTP 200 확인. 검색 콘솔 제출·색인 완료와는 별개 |
 | SEO | canonical | DONE | site.config.json의 Vercel origin으로 생성. 도메인 변경 시 siteUrl 갱신 |
 | SEO | Open Graph | DONE | 실제 브랜드 OG 표지와 공유 메타데이터 준비 |
-| SEARCH ENGINES | Google Search Console | USER ACTION REQUIRED | 소유 확인 태그는 현재 주소 공개 HTML에 있음. 콘솔에서 이 속성의 소유 확인 성공은 기록되지 않음. 태그 배포와 소유 확인 완료는 다름 |
-| SEARCH ENGINES | Google Sitemap | NOT STARTED | 이 주소의 제출·처리 성공 기록 없음. 이전 Sites 주소의 처리 완료를 이 주소의 제출이나 색인 완료로 보지 않음 |
-| SEARCH ENGINES | Naver Search Advisor | USER ACTION REQUIRED | 소유 확인 태그는 현재 주소 공개 HTML에 있음. 이 주소의 소유 확인 성공 기록 없음 |
-| SEARCH ENGINES | Naver Sitemap | NOT STARTED | 소유 확인 뒤 제출. 제출·수집 성공 기록 없음 |
+| SEARCH ENGINES | Google Search Console | USER ACTION REQUIRED | 직접 확인: 태그가 현재 주소 공개 HTML에 있음. 사용자 확인 기록: 10:32 KST 운영 주소용 태그를 설정에 반영. 콘솔의 소유 확인 완료 문구는 없음 |
+| SEARCH ENGINES | Google Sitemap | NOT STARTED | 이 주소의 제출·처리 성공 기록 없음. 이전 Sites 주소의 처리 완료를 이 주소의 제출이나 색인 완료로 보지 않음. 실제 검색 노출은 미확인 |
+| SEARCH ENGINES | Naver Search Advisor | USER ACTION REQUIRED | 직접 확인: 태그가 현재 주소 공개 HTML에 있음. 사용자 확인 기록: 10:19 KST Vercel 도메인용 태그를 설정에 반영. 콘솔의 소유 확인 완료 문구는 없음 |
+| SEARCH ENGINES | Naver Sitemap | NOT STARTED | 소유 확인 뒤 제출. 제출·수집 성공 기록 없음. 실제 검색 노출은 미확인 |
 | ANALYTICS | Tracking Ready | DONE | CTA/email/phone/live demo/project view 이벤트 및 설정 분리 |
 | ANALYTICS | Connected | USER ACTION REQUIRED | 사용할 분석 서비스와 실제 계정 ID 결정 필요 |
 
@@ -41,4 +41,6 @@
 ## 10/8 공개 응답
 이전 Sites 주소에 대한 기본 Python HTTP 요청은 Cloudflare 403 / error code 1010으로 차단됐고, 일반 브라우저 User-Agent를 사용한 익명 메인 요청은 HTTP 200이었습니다. 이는 그 주소의 일반 접근 확인이며 로봇 수집 성공이 아닙니다.
 
-2026-10-08 현재 운영 주소의 `/`, `/robots.txt`, `/sitemap.xml`은 HTTP 200이었고, canonical·소유 확인 태그·사이트맵 주소가 site.config.json과 같았습니다. 저장소 `dist`는 같은 설정으로 다시 빌드했고 `npm run build`와 `npm run check`를 통과했습니다. 이 확인은 공개 응답과 생성 결과 검사이며, Google/Naver 수집 성공, 소유 확인 완료, 색인 완료가 아닙니다.
+2026-10-08 현재 운영 주소의 `/`, `/robots.txt`, `/sitemap.xml`은 HTTP 200이었고, canonical·소유 확인 태그·사이트맵 주소가 site.config.json과 같았습니다. 저장소 `dist`는 같은 설정으로 다시 빌드했고 `npm run build`와 `npm run check`를 통과했습니다. 이것은 직접 확인한 배포 결과입니다.
+
+같은 날 사용자 확인으로 남은 콘솔 기록은, 10:19 KST 네이버 태그와 10:32 KST Google 태그를 Vercel 운영 주소용으로 설정에 반영한 것입니다. 콘솔의 소유 확인 완료, 사이트맵 처리, URL 검사 문구는 이 주소로 남아 있지 않습니다. 실제 검색 노출은 미확인입니다.
