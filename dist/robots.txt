@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://seoah-production-partner.happysuyeun.chatgpt.site/sitemap.xml
+Sitemap: https://seoah-production-partner.vercel.app/sitemap.xml
