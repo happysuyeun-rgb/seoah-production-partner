@@ -41,6 +41,7 @@ function update(){
   const motion = motionAllowed();
   const fraction = clamp((innerHeight * .75 - rect.top) / (rect.height * .7));
   progressBar.style.setProperty('--progress', String(max > 0 ? clamp(scrollY / max) : 0));
+  document.body.classList.toggle('is-scrolled', scrollY > 24);
   if (heroInView) hero.style.setProperty('--hy', motion && wide.matches ? String(Math.round(scrollY)) : '0');
   steps.forEach((el, i) => el.classList.toggle('active', i <= Math.floor(fraction * (steps.length - .001))));
   if (frame) frame.style.setProperty('--a', motion ? clamp(fraction * 1.4).toFixed(3) : '1');
