@@ -1,0 +1,239 @@
+{
+  "commit": "3e13c7c",
+  "viewports": {
+    "desktop": {
+      "width": 1440,
+      "height": 900,
+      "font": "\"Pretendard Variable\", Pretendard, -apple-system, BlinkMacSystemFont, \"Apple SD Gothic Neo\", \"Malgun Gothic\", \"Noto Sans KR\", system-ui, sans-serif",
+      "overflow": 0
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "font": "\"Pretendard Variable\", Pretendard, -apple-system, BlinkMacSystemFont, \"Apple SD Gothic Neo\", \"Malgun Gothic\", \"Noto Sans KR\", system-ui, sans-serif",
+      "overflow": 0
+    }
+  },
+  "interactions": {
+    "recording": {
+      "file": "review/desktop-1440-contact-anchor.gif",
+      "frames": 12,
+      "scaledWidth": 800,
+      "note": "1440 desktop session, frames scaled to 800px wide"
+    },
+    "menu": [
+      {
+        "selector": ".nav-links a[href=\"#capabilities\"]",
+        "id": "#capabilities",
+        "aligned": true,
+        "top": 73,
+        "nav": 64,
+        "title": "cap-title"
+      },
+      {
+        "selector": ".nav-links a[href=\"#work\"]",
+        "id": "#work",
+        "aligned": true,
+        "top": 75,
+        "nav": 64,
+        "title": "work-title"
+      },
+      {
+        "selector": ".nav-links a[href=\"#partnership\"]",
+        "id": "#partnership",
+        "aligned": true,
+        "top": 75,
+        "nav": 64,
+        "title": "partner-title"
+      },
+      {
+        "selector": ".nav-links a[href=\"#delivery\"]",
+        "id": "#delivery",
+        "aligned": true,
+        "top": 76,
+        "nav": 64,
+        "title": "delivery-title"
+      },
+      {
+        "selector": ".nav-cta",
+        "id": "#contact",
+        "aligned": true,
+        "top": 72,
+        "nav": 64,
+        "title": "contact-title"
+      },
+      {
+        "selector": ".hero-actions a[href=\"#capabilities\"]",
+        "id": "#capabilities",
+        "aligned": true,
+        "top": 74,
+        "nav": 64,
+        "title": "cap-title"
+      },
+      {
+        "selector": "header a.brand",
+        "id": "#home",
+        "aligned": true,
+        "top": 0,
+        "nav": 64,
+        "title": "hero-title",
+        "note": "Hero is the first section, so its top stays at 0 when the page returns to the start."
+      }
+    ],
+    "capabilities": {
+      "initial": [
+        true,
+        false,
+        false,
+        false
+      ],
+      "secondOpened": true,
+      "secondClosed": false,
+      "firstClosed": false,
+      "firstReopened": true
+    },
+    "delivery": {
+      "click": {
+        "selected": "true",
+        "panelHidden": false
+      },
+      "afterRight": "tab-advanced",
+      "afterHome": "tab-basic",
+      "afterEnd": "tab-advanced",
+      "afterLeft": "tab-editable"
+    },
+    "zoom": {
+      "zoomOpen": {
+        "open": true,
+        "focus": "dialog-close",
+        "src": "http://127.0.0.1:8080/work-desktop.webp"
+      },
+      "afterClose": {
+        "open": false,
+        "zoom": ".shot-desktop"
+      },
+      "afterEscape": {
+        "open": false,
+        "zoom": ".shot-desktop"
+      }
+    },
+    "reducedMotion": {
+      "scrollBehavior": "auto",
+      "h1Height": 213,
+      "h1Opacity": "1",
+      "headOpacity": "1",
+      "headTransform": "none",
+      "hy": "0",
+      "contactAlignedWithin350ms": true,
+      "elapsed": 407
+    },
+    "mobileFloat": {
+      "hero": {
+        "show": false,
+        "visibility": "hidden"
+      },
+      "work": {
+        "show": true,
+        "visibility": "visible",
+        "barTop": 784,
+        "rows": [
+          {
+            "label": "프로젝트",
+            "bottom": 378,
+            "overlap": false
+          },
+          {
+            "label": "유형",
+            "bottom": 442,
+            "overlap": false
+          },
+          {
+            "label": "해결하려던 문제",
+            "bottom": 531,
+            "overlap": false
+          },
+          {
+            "label": "역할",
+            "bottom": 595,
+            "overlap": false
+          },
+          {
+            "label": "기여 범위",
+            "bottom": 659,
+            "overlap": false
+          },
+          {
+            "label": "결과",
+            "bottom": 748,
+            "overlap": false
+          }
+        ]
+      },
+      "contact": {
+        "show": false,
+        "visibility": "hidden",
+        "contactTop": 56,
+        "nav": 56
+      }
+    },
+    "mobileMenu": [
+      {
+        "selector": ".nav-links a[href=\"#capabilities\"]",
+        "id": "#capabilities",
+        "aligned": true,
+        "top": 68,
+        "nav": 56,
+        "title": "cap-title"
+      },
+      {
+        "selector": ".nav-links a[href=\"#work\"]",
+        "id": "#work",
+        "aligned": true,
+        "top": 66,
+        "nav": 56,
+        "title": "work-title"
+      },
+      {
+        "selector": ".nav-links a[href=\"#partnership\"]",
+        "id": "#partnership",
+        "aligned": true,
+        "top": 67,
+        "nav": 56,
+        "title": "partner-title"
+      },
+      {
+        "selector": ".nav-links a[href=\"#delivery\"]",
+        "id": "#delivery",
+        "aligned": true,
+        "top": 64,
+        "nav": 56,
+        "title": "delivery-title"
+      }
+    ],
+    "mobileFloatClick": {
+      "selector": ".mobile-contact",
+      "id": "#contact",
+      "aligned": true,
+      "top": 65,
+      "nav": 56,
+      "title": "contact-title"
+    }
+  },
+  "workImages": {
+    "desktop": {
+      "changed": 9518,
+      "pixels": 900000,
+      "ratio": 0.010575555555555555
+    },
+    "mobile": {
+      "changed": 51554,
+      "pixels": 329160,
+      "ratio": 0.15662291894519384
+    },
+    "updated": ["dist/work-mobile.webp"],
+    "desktopDecision": "Pixel difference 1.1 percent. Same layout, underline, and orb. Left unchanged.",
+    "mobileDecision": "Pixel difference 15.7 percent. Replaced with the fresh 390x844 capture. Difference after replacement is 0.",
+    "fontOk": true
+  },
+  "console": []
+}
