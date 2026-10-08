@@ -29,7 +29,7 @@ hero.addEventListener('pointermove', e => {
   });
 }, {passive:true});
 hero.addEventListener('pointerleave', resetPointer);
-new IntersectionObserver(([entry]) => { heroInView = entry.isIntersecting; if (!heroInView) resetPointer(); }).observe(hero);
+new IntersectionObserver(([entry]) => { heroInView = entry.isIntersecting; if (!heroInView) resetPointer(); onScroll(); }).observe(hero);
 
 let pending = false;
 function update(){
@@ -42,7 +42,7 @@ function update(){
   const fraction = clamp((innerHeight * .75 - rect.top) / (rect.height * .7));
   progressBar.style.setProperty('--progress', String(max > 0 ? clamp(scrollY / max) : 0));
   document.body.classList.toggle('is-scrolled', scrollY > 24);
-  if (heroInView) hero.style.setProperty('--hy', motion && wide.matches ? String(Math.round(scrollY)) : '0');
+  hero.style.setProperty('--hy', heroInView && motion && wide.matches ? String(Math.round(scrollY)) : '0');
   steps.forEach((el, i) => el.classList.toggle('active', i <= Math.floor(fraction * (steps.length - .001))));
   if (frame) frame.style.setProperty('--a', motion ? clamp(fraction * 1.4).toFixed(3) : '1');
   if (t) timeline.style.setProperty('--tl', motion ? clamp((innerHeight * .9 - t.top) / (innerHeight * .5)).toFixed(3) : '1');
