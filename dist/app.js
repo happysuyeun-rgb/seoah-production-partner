@@ -24,9 +24,9 @@ finePointer.addEventListener('change', resetPointer);
 const steps = [...document.querySelectorAll('[data-step]')];
 const journey = document.querySelector('#journey');
 let pending = false;
-function onScroll(){ if(pending)return; pending=true;requestAnimationFrame(()=>{const max=document.documentElement.scrollHeight-innerHeight;document.querySelector('.reading-progress').style.transform=`scaleX(${max>0?Math.max(0,Math.min(1,scrollY/max)):0})`;const rect=journey.getBoundingClientRect();const fraction=Math.max(0,Math.min(1,(innerHeight*.8-rect.top)/(rect.height*.8)));steps.forEach((el,i)=>el.classList.toggle('active',i<=Math.floor(fraction*5)));pending=false;});}
+function onScroll(){ if(pending)return; pending=true;requestAnimationFrame(()=>{const max=document.documentElement.scrollHeight-innerHeight;document.querySelector('.reading-progress').style.setProperty('--progress',String(max>0?Math.max(0,Math.min(1,scrollY/max)):0));const rect=journey.getBoundingClientRect();const fraction=Math.max(0,Math.min(1,(innerHeight*.8-rect.top)/(rect.height*.8)));steps.forEach((el,i)=>el.classList.toggle('active',i<=Math.floor(fraction*5)));pending=false;});}
 addEventListener('scroll',onScroll,{passive:true});addEventListener('resize',onScroll,{passive:true});onScroll();
-new IntersectionObserver(entries=>{document.body.classList.toggle('contact-visible',entries[0].isIntersecting)},{threshold:.15}).observe(document.querySelector('#contact'));
+new IntersectionObserver(entries=>{document.body.classList.toggle('contact-visible',entries.some(entry=>entry.isIntersecting))},{threshold:.2}).observe(document.querySelector('#contact-panel'));
 const tabs=[...document.querySelectorAll('[data-delivery]')];
 const panels=[...document.querySelectorAll('.delivery-panel')];
 function selectTab(tab){tabs.forEach(x=>{x.setAttribute('aria-selected',String(x===tab));x.tabIndex=x===tab?0:-1});panels.forEach(p=>{p.hidden=p.id!==tab.getAttribute('aria-controls')});}
