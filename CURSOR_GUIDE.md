@@ -22,8 +22,10 @@ index.html의 SEO START/END 영역은 빌드가 자동 생성하므로 직접 �
 
 ## 저장과 배포
 수정 → 빌드·검사 → 브라우저 검수 → GitHub commit/push 순서로 보관합니다.
-GitHub 업로드는 소스 보관이며 기존 Sites에 자동 배포되지 않습니다. 이 대화에서 최신 GitHub 소스로 Sites 업데이트를 요청하면 됩니다. 다른 호스팅으로 이동할 때는 dist 폴더가 정적 배포 루트입니다.
+GitHub main 브랜치에 push하면 연결된 Vercel 프로젝트 seoah-production-partner가 자동 빌드·Production 배포합니다. Vercel에서 READY 상태와 최신 commit을 확인하세요. Production 주소: https://seoah-production-partner.vercel.app
+기존 Sites 주소는 별도의 이전 배포이며 GitHub 수정이 자동 반영되지 않습니다. 현재 운영 수정은 Vercel을 기준으로 합니다.
 
 ## 검색 등록
-현재 origin: https://seoah-production-partner.happysuyeun.chatgpt.site
+현재 origin: https://seoah-production-partner.vercel.app
+기존 주소의 검색 소유 확인은 새 주소에 자동 이전되지 않습니다. 새 주소로 Search Console·네이버 속성을 등록하고 소유 확인·sitemap 제출을 진행해야 합니다.
 Google·네이버에서 제공한 정확한 HTML 소유권 코드만 verification.google / verification.naver에 넣고 빌드·재배포한 뒤 확인합니다. 계정 비밀번호·API secret은 파일에 넣지 않습니다.
