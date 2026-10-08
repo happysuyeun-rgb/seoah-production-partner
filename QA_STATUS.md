@@ -44,3 +44,20 @@
 2026-10-08 현재 운영 주소의 `/`, `/robots.txt`, `/sitemap.xml`은 HTTP 200이었고, canonical·소유 확인 태그·사이트맵 주소가 site.config.json과 같았습니다. 저장소 `dist`는 같은 설정으로 다시 빌드했고 `npm run build`와 `npm run check`를 통과했습니다. 이것은 직접 확인한 배포 결과입니다.
 
 같은 날 사용자 확인으로 남은 콘솔 기록은, 10:19 KST 네이버 태그와 10:32 KST Google 태그를 Vercel 운영 주소용으로 설정에 반영한 것입니다. 콘솔의 소유 확인 완료, 사이트맵 처리, URL 검사 문구는 이 주소로 남아 있지 않습니다. 실제 검색 노출은 미확인입니다.
+
+## 디자인 개편 브랜치 검수 — design/korean-editorial-landing (운영 미반영)
+위 표는 main(운영) 기준이며, 이 브랜치가 merge되기 전에는 바꾸지 않습니다. 아래는 2026-10-08 로컬 미리보기(127.0.0.1:8080)에서 측정한 결과입니다. Vercel Preview는 Vercel 로그인 보호(302 → SSO)로 외부 측정을 하지 못했습니다.
+
+측정함 (로컬 headless Chrome, CDP)
+- 320×568 · 375×667 · 390×844 · 768×1024 · 1024×768 · 1440×900 · 720×450(1440×900의 200% 확대 상당): 가로 넘침 없음, 44px 미만 링크·버튼 없음, Hero CTA 첫 화면 안, #contact 도착 시 제목·이메일·전화가 nav 아래 화면 안, 모바일 고정 CTA는 Hero CTA가 보일 때와 연락처 패널이 보일 때 숨김.
+- 실제 키 입력: Tab 순서(본문 이동 → 로고 → 메뉴), 제작 범위 summary Enter/Space 펼침·닫힘, 납품 탭 ←/→/Home/End, 사례 확대 dialog Enter 열기 → 닫기 버튼 포커스 → Escape/닫기 후 원래 버튼으로 포커스 복귀.
+- JavaScript 끔: 납품 3개 패널 모두 표시, 탭 스위치·확대 버튼 숨김, 본문·연락처 링크 유지, 이동 효과 없음.
+- reduced motion: 읽기 진행 표시 scaleX 0→1 정상, Hero·도식·레이어 transform 없음, 전환 시간 0.
+- 404: 제목·noindex 유지, 390px 가로 넘침 없음. 콘솔 오류 0건.
+- Lighthouse(로컬, 압축 없는 미리보기 서버): Mobile 성능 0.87(FCP 2.9s, LCP 3.2s, CLS 0, TBT 0ms), 접근성 1, 권장사항 1, SEO 1 / Desktop 성능 0.99, 접근성 1, 권장사항 1, SEO 1 / Mobile devtools 실제 스로틀링 성능 0.93(FCP·LCP 2.6s). 실제 사용자 CWV가 아닙니다.
+
+코드 검사
+- npm run build / npm run check 통과. canonical·소유 확인 태그·JSON-LD·OG·연락처 유지, robots·sitemap·404·site.config.json 변경 없음.
+
+미확인
+- 실제 iOS Safari·Android Chrome 기기, 화면 낭독기, 브라우저 자체 200% 확대(뷰포트 축소로만 재현), Vercel Preview·운영의 압축 적용 후 성능, 실제 사용자 CWV.

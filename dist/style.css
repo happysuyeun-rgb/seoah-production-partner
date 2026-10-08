@@ -3,8 +3,8 @@
   --ink:#14162a;--ink-2:#474c63;--paper:#f3f4f8;--paper-2:#e8eaf3;--lavender:#e5e7fb;
   --cobalt:#2a3ef0;--cobalt-ink:#1d27a8;--cobalt-deep:#1b26a6;--violet:#7b63f2;--coral:#ff8f78;--coral-soft:#ffc4b3;
   --line:rgba(20,22,42,.14);--line-strong:rgba(20,22,42,.28);
-  --font:'Pretendard Variable',Pretendard,-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',system-ui,sans-serif;
-  --display:var(--font);
+  --font:-apple-system,BlinkMacSystemFont,'Apple SD Gothic Neo','Malgun Gothic','Noto Sans KR',system-ui,sans-serif;
+  --display:'Pretendard Variable',Pretendard,var(--font);
   --ease:cubic-bezier(.2,.7,.2,1);--dur:.5s;--dur-fast:.2s;
   --radius:18px;--gutter:clamp(20px,5vw,72px);--max:1280px;--nav-space:88px
 }
@@ -21,6 +21,7 @@ a,button,summary{-webkit-tap-highlight-color:transparent}
 :focus-visible{outline:3px solid var(--focus,#ffb547);outline-offset:4px;border-radius:6px}
 .journey,.work,.partnership,.delivery,.contact{--focus:var(--cobalt-ink)}
 ::selection{background:var(--coral);color:var(--ink)}
+h1,h2,h3,.brand,.hero-lens-title,.cap-name,.steps strong,.timeline strong,.layers strong,.delivery-number,.email,.phone,.error-page h1{font-family:var(--display)}
 .br-m,.nav-links .m{display:none}
 .nb{white-space:nowrap}
 
@@ -359,6 +360,13 @@ footer>a:last-child{display:inline-flex;align-items:center;min-height:44px;font-
 }
 @media (max-width:360px){
   .nav-links a{padding:0 8px}
+  .hero{padding-top:calc(var(--nav-space) + 10px)}
+  .hero-inner{gap:12px}
+  .hero-eyebrow{font-size:12px}
+  .hero-title{font-size:32px}
+  .hero-lead{font-size:15px;line-height:1.65}
+  .hero-trust{margin-top:8px;font-size:13px}
+  .hero-actions{margin-top:14px}
   .hero-actions .button{padding:0 12px;font-size:14px}
 }
 /* Short landscape and 200% zoom */
