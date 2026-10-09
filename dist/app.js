@@ -86,16 +86,42 @@ addEventListener('resize', onScroll, {passive:true});
 [reduced, finePointer, wide].forEach(query => query.addEventListener('change', () => { resetPointer(); if (sceneFrame && (reduced.matches || !finePointer.matches || !wide.matches)) finishCover(false); syncDeliveryMotion(); placeDeliveryMark(false); onScroll(); }));
 onScroll();
 
-// Section heads and the system layers settle into place once; content is never hidden.
-document.querySelectorAll('.layers li').forEach((li, i) => li.style.setProperty('--i', i));
-let settlePrimed = false;
-const settle = new IntersectionObserver(entries => {
+// Heading first, then the body copy in order, once the section fills the viewport.
+// Reduced motion and no-JS keep every line visible.
+doc.classList.add('motion-ready');
+function primeSequence(section){
+  const title = section.querySelector('h1, h2');
+  const nodes = [];
+  const push = el => { if (el && !nodes.includes(el)) nodes.push(el); };
+  if (section.classList.contains('hero')) {
+    const eyebrow = section.querySelector('.hero-eyebrow');
+    if (eyebrow) { eyebrow.classList.add('seq'); eyebrow.style.setProperty('--d', '0s'); }
+    ['.hero-lead','.hero-trust','.hero-actions','.hero-lens'].forEach(sel => push(section.querySelector(sel)));
+  } else {
+    push(section.querySelector('.section-lead, .contact-lead'));
+    push(section.querySelector('.section-head .status'));
+    section.querySelectorAll('.cap-list > .cap, .cap-note, .steps > li, .assembly, .case-preview, .case-body > h3, .case-info > div, .pending-work, .partner-who, .forms, .whitelabel, .timeline, .delivery-switch, .delivery-panels, .layers > li, .ways > article, .ways-caption, .templates, .contact-panel, .contact-action, footer').forEach(push);
+  }
+  const label = section.querySelector('.label');
+  if (label) { label.classList.add('seq'); label.style.setProperty('--d', '0s'); }
+  if (title) { title.classList.add('seq'); title.style.setProperty('--d', '0s'); }
+  nodes.forEach((el, i) => { el.classList.add('seq'); el.style.setProperty('--d', `${0.16 + i * 0.07}s`); });
+}
+const showSection = section => section.classList.add('is-in');
+const sectionFills = entry => {
+  if (entry.boundingClientRect.bottom <= 0) return true;
+  const visible = entry.intersectionRect.height;
+  return visible >= innerHeight * .62 || (entry.boundingClientRect.top <= innerHeight * .18 && visible > 120);
+};
+const sectionWatch = new IntersectionObserver(entries => {
   entries.forEach(entry => {
-    if (entry.isIntersecting || entry.boundingClientRect.top < 0) { entry.target.classList.add('in'); settle.unobserve(entry.target); }
+    if (!sectionFills(entry)) return;
+    sectionWatch.unobserve(entry.target);
+    // Let the hidden state paint, then reveal the title before the body.
+    requestAnimationFrame(() => requestAnimationFrame(() => showSection(entry.target)));
   });
-  if (!settlePrimed) { settlePrimed = true; requestAnimationFrame(() => doc.classList.add('motion-ready')); }
-}, {rootMargin:'0px 0px -8% 0px'});
-document.querySelectorAll('.section-head,.layers,#contact-title').forEach(el => settle.observe(el));
+}, {threshold:[0,.2,.35,.5,.75]});
+document.querySelectorAll('.hero, .section').forEach(section => { primeSequence(section); sectionWatch.observe(section); });
 
 // The work frame draws once as the screenshot enters. The picture stays visible the whole time.
 const stage = document.querySelector('.preview-stage');
@@ -371,6 +397,31 @@ for (const t of templates) {
 const tracking = window.seoahSettings?.analytics;
 function track(name, parameters = {}){ const detail = {event:name, ...parameters}; window.dispatchEvent(new CustomEvent('seoah:analytics', {detail})); if (tracking?.enabled) { window.dataLayer = window.dataLayer || []; window.dataLayer.push(detail); } }
 document.addEventListener('click', e => { const link = e.target.closest?.('[data-track]'); if (!link) return; link.dataset.track.split(' ').forEach(name => track(name, {placement:link.closest('section')?.id || 'navigation'})); });
+const emailLink = document.querySelector('.email');
+if (emailLink) {
+  let copyTimer = 0;
+  emailLink.addEventListener('click', async event => {
+    event.preventDefault();
+    const address = emailLink.textContent.trim();
+    try {
+      await navigator.clipboard.writeText(address);
+    } catch {
+      const field = document.createElement('textarea');
+      field.value = address;
+      field.setAttribute('readonly', '');
+      field.style.position = 'fixed';
+      field.style.left = '-999px';
+      document.body.append(field);
+      field.select();
+      document.execCommand('copy');
+      field.remove();
+    }
+    emailLink.dataset.copied = 'true';
+    emailLink.setAttribute('aria-label', '이메일 주소를 복사했습니다. ' + address);
+    clearTimeout(copyTimer);
+    copyTimer = setTimeout(() => { delete emailLink.dataset.copied; emailLink.removeAttribute('aria-label'); }, 1600);
+  });
+}
 const seenProjects = new Set();
 const projectObserver = new IntersectionObserver(entries => entries.forEach(entry => { if (entry.isIntersecting && !seenProjects.has(entry.target)) { seenProjects.add(entry.target); track('project_view', {project:entry.target.dataset.project}); projectObserver.unobserve(entry.target); } }), {threshold:.25});
 document.querySelectorAll('[data-project]').forEach(el => projectObserver.observe(el));
