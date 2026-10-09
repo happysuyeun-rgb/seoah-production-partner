@@ -31,26 +31,58 @@ hero.addEventListener('pointermove', e => {
 hero.addEventListener('pointerleave', resetPointer);
 new IntersectionObserver(([entry]) => { heroInView = entry.isIntersecting; if (!heroInView) resetPointer(); onScroll(); }).observe(hero);
 
+const navLinks = [...document.querySelectorAll('.nav-links a')];
+const navMark = document.querySelector('.nav-mark');
+const navTargets = navLinks.map(link => document.querySelector(link.getAttribute('href'))).filter(Boolean);
 let pending = false;
+let sceneCover = false;
 function update(){
   pending = false;
   // Read every rect before writing, so one frame costs one layout.
   const max = doc.scrollHeight - innerHeight;
   const rect = journey.getBoundingClientRect();
   const t = timeline?.getBoundingClientRect();
+  const tlItems = timeline ? [...timeline.children] : [];
+  const tlRects = t ? tlItems.map(li => li.getBoundingClientRect()) : [];
   const motion = motionAllowed();
   const fraction = clamp((innerHeight * .75 - rect.top) / (rect.height * .7));
-  progressBar.style.setProperty('--progress', String(max > 0 ? clamp(scrollY / max) : 0));
-  document.body.classList.toggle('is-scrolled', scrollY > 24);
-  hero.style.setProperty('--hy', heroInView && motion && wide.matches ? String(Math.round(scrollY)) : '0');
+  const markLine = innerHeight * .4;
+  let current = -1;
+  navTargets.forEach((section, i) => { if (section.getBoundingClientRect().top <= markLine) current = i; });
+  const linkBox = current >= 0 ? navLinks[current].getBoundingClientRect() : null;
+  const hostBox = linkBox ? navLinks[current].parentElement.getBoundingClientRect() : null;
+  progressBar.style.setProperty('--progress', String(!sceneCover && max > 0 ? clamp(scrollY / max) : 0));
+  document.body.classList.toggle('is-scrolled', !sceneCover && scrollY > 24);
+  hero.style.setProperty('--hy', !sceneCover && heroInView && motion && wide.matches ? String(Math.round(scrollY)) : '0');
   steps.forEach((el, i) => el.classList.toggle('active', i <= Math.floor(fraction * (steps.length - .001))));
   if (frame) frame.style.setProperty('--a', motion ? clamp(fraction * 1.4).toFixed(3) : '1');
-  if (t) timeline.style.setProperty('--tl', motion ? clamp((innerHeight * .9 - t.top) / (innerHeight * .5)).toFixed(3) : '1');
+  if (t) {
+    const tl = motion ? clamp((innerHeight * .9 - t.top) / (innerHeight * .5)) : 1;
+    const vertical = !wide.matches;
+    const trackStart = vertical ? t.top + 6 : t.left;
+    const trackLen = Math.max(1, vertical ? t.height - 12 : t.width);
+    timeline.style.setProperty('--tl', tl.toFixed(3));
+    tlItems.forEach((li, i) => {
+      const box = tlRects[i];
+      const dot = vertical ? box.top + 18.5 : box.left + 4.5;
+      li.classList.toggle('is-on', tl * trackLen >= dot - trackStart);
+    });
+  }
+  navLinks.forEach(link => link.removeAttribute('aria-current'));
+  if (navMark) {
+    if (!linkBox) navMark.style.width = '0px';
+    else {
+      const inset = parseFloat(getComputedStyle(navLinks[current]).paddingLeft) || 0;
+      navLinks[current].setAttribute('aria-current', 'true');
+      navMark.style.transform = `translate3d(${Math.round(linkBox.left - hostBox.left + inset)}px,0,0)`;
+      navMark.style.width = `${Math.max(0, Math.round(linkBox.width - inset * 2))}px`;
+    }
+  }
 }
 function onScroll(){ if (pending) return; pending = true; requestAnimationFrame(update); }
 addEventListener('scroll', onScroll, {passive:true});
 addEventListener('resize', onScroll, {passive:true});
-[reduced, finePointer, wide].forEach(query => query.addEventListener('change', () => { resetPointer(); onScroll(); }));
+[reduced, finePointer, wide].forEach(query => query.addEventListener('change', () => { resetPointer(); if (sceneFrame && (reduced.matches || !finePointer.matches || !wide.matches)) finishCover(false); syncDeliveryMotion(); placeDeliveryMark(false); onScroll(); }));
 onScroll();
 
 // Section heads and the system layers settle into place once; content is never hidden.
@@ -62,7 +94,20 @@ const settle = new IntersectionObserver(entries => {
   });
   if (!settlePrimed) { settlePrimed = true; requestAnimationFrame(() => doc.classList.add('motion-ready')); }
 }, {rootMargin:'0px 0px -8% 0px'});
-document.querySelectorAll('.section-head,.layers').forEach(el => settle.observe(el));
+document.querySelectorAll('.section-head,.layers,#contact-title').forEach(el => settle.observe(el));
+
+// The work frame draws once as the screenshot enters. The picture stays visible the whole time.
+const stage = document.querySelector('.preview-stage');
+if (stage) {
+  const frameWatch = new IntersectionObserver(([entry]) => {
+    const visible = entry.isIntersecting && entry.intersectionRect.height > 120;
+    const past = entry.boundingClientRect.bottom < innerHeight * .4;
+    if (!visible && !past) return;
+    if (motionAllowed()) stage.classList.add('play');
+    frameWatch.disconnect();
+  });
+  frameWatch.observe(stage);
+}
 
 // Floating mobile CTA: shown only after the hero CTAs leave and hidden while the real contact panel is visible.
 const floatState = {heroCta:true, panel:false};
@@ -75,11 +120,48 @@ new IntersectionObserver(([entry]) => { floatState.panel = entry.isIntersecting;
 
 const tabs = [...document.querySelectorAll('[data-delivery]')];
 const panels = [...document.querySelectorAll('.delivery-panel')];
-function selectTab(tab){
-  tabs.forEach(x => { x.setAttribute('aria-selected', String(x === tab)); x.tabIndex = x === tab ? 0 : -1; });
-  panels.forEach(p => { p.hidden = p.id !== tab.getAttribute('aria-controls'); });
+const deliveryRoot = document.querySelector('#delivery');
+function syncDeliveryMotion(){
+  deliveryRoot?.classList.toggle('is-live', motionAllowed());
 }
-selectTab(tabs[0]);
+function placeDeliveryMark(animate){
+  const tab = tabs.find(item => item.getAttribute('aria-selected') === 'true');
+  const mark = document.querySelector('.delivery-mark');
+  if (!tab || !mark) return;
+  const host = tab.parentElement.getBoundingClientRect();
+  const box = tab.getBoundingClientRect();
+  mark.parentElement.classList.add('has-mark');
+  if (!animate || !motionAllowed()) mark.style.transition = 'none';
+  mark.style.transform = `translate3d(${Math.round(box.left - host.left)}px,1px,0)`;
+  mark.style.width = `${Math.max(0, Math.round(box.width))}px`;
+  if (mark.style.transition === 'none') {
+    void mark.offsetWidth;
+    mark.style.transition = '';
+  }
+}
+function selectTab(tab, animateMark = true){
+  const id = tab.getAttribute('aria-controls');
+  tabs.forEach(x => { x.setAttribute('aria-selected', String(x === tab)); x.tabIndex = x === tab ? 0 : -1; });
+  panels.forEach(p => {
+    const show = p.id === id;
+    p.hidden = !show;
+    if (!show) p.classList.remove('draw');
+  });
+  const panel = document.getElementById(id);
+  const h3 = panel?.querySelector('h3');
+  if (panel && h3 && animateMark && motionAllowed()) {
+    h3.style.transition = 'none';
+    panel.classList.remove('draw');
+    void h3.offsetWidth;
+    h3.style.transition = '';
+    panel.classList.add('draw');
+  } else panel?.classList.add('draw');
+  placeDeliveryMark(animateMark);
+}
+syncDeliveryMotion();
+selectTab(tabs[0], false);
+addEventListener('resize', () => placeDeliveryMark(false), {passive:true});
+document.fonts?.ready.then(() => placeDeliveryMark(false));
 tabs.forEach((tab, i) => {
   tab.addEventListener('click', () => selectTab(tab));
   tab.addEventListener('keydown', e => {
@@ -107,7 +189,7 @@ if (dialog && typeof dialog.showModal === 'function') {
     opener = button;
     image.src = source.src;
     image.alt = source.alt;
-    caption.textContent = button.textContent.replace(' 크게 보기', ' 화면');
+    caption.textContent = button.textContent.replace(/\s*크게 보기/, '');
     dialog.classList.toggle('is-mobile', button.dataset.zoom.includes('mobile'));
     dialog.showModal();
     dialog.querySelector('.dialog-close').focus();
@@ -116,6 +198,132 @@ if (dialog && typeof dialog.showModal === 'function') {
   dialog.addEventListener('click', e => { if (e.target === dialog) dialog.close(); });
   dialog.addEventListener('close', () => { opener?.focus(); opener = null; });
 }
+
+// Hero scene: one mouse-wheel gesture on the hero lifts that screen away and reveals 제작 범위.
+// Touch, narrow viewports, keyboard, and in-page scrolling below that screen stay native.
+let sceneFrame = 0;
+let sceneLockUntil = 0;
+let sceneToY = 0;
+let wheelAccum = 0;
+let wheelGesture = null;
+let wheelIdle = 0;
+const sceneSpacer = document.createElement('div');
+sceneSpacer.setAttribute('aria-hidden', 'true');
+sceneSpacer.style.cssText = 'display:block;width:100%;pointer-events:none';
+const sceneInput = () => finePointer.matches && wide.matches && hero.getBoundingClientRect().height >= innerHeight * .92;
+const navOffset = () => { const n = parseFloat(getComputedStyle(doc).scrollPaddingTop); return Number.isFinite(n) ? n : 64; };
+const capSceneY = () => Math.max(0, Math.round(document.querySelector('#capabilities').getBoundingClientRect().top + scrollY - navOffset()));
+const heroIsScene = () => { const r = hero.getBoundingClientRect(); return r.top >= -2 && r.top <= 2 && r.bottom >= innerHeight - 4; };
+const atCapScene = () => Math.abs(document.querySelector('#capabilities').getBoundingClientRect().top - navOffset()) <= 16;
+const wheelDelta = e => e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * innerHeight : e.deltaY;
+function nestedScroll(target, dy){
+  for (let el = target instanceof Element ? target : null; el && el !== doc; el = el.parentElement) {
+    const oy = getComputedStyle(el).overflowY;
+    if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight + 1) {
+      if (dy > 0 && el.scrollTop + el.clientHeight < el.scrollHeight - 1) return true;
+      if (dy < 0 && el.scrollTop > 1) return true;
+    }
+  }
+  return false;
+}
+function cleanupCover(){
+  const cap = document.querySelector('#capabilities');
+  sceneCover = false;
+  sceneFrame = 0;
+  doc.classList.remove('is-scene');
+  cap.classList.remove('is-scene-next');
+  cap.style.top = '';
+  cap.style.transform = '';
+  hero.classList.remove('is-cover');
+  hero.style.height = '';
+  hero.style.transform = '';
+  sceneSpacer.remove();
+  doc.style.scrollBehavior = '';
+}
+function finishCover(lock = true){
+  const y = sceneToY;
+  cancelAnimationFrame(sceneFrame);
+  cleanupCover();
+  doc.style.scrollBehavior = 'auto';
+  scrollTo(0, y);
+  doc.style.scrollBehavior = '';
+  sceneLockUntil = lock ? performance.now() + 420 : 0;
+  onScroll();
+}
+function startCover(direction, toY){
+  if (sceneFrame || performance.now() < sceneLockUntil) return;
+  sceneToY = toY;
+  sceneLockUntil = performance.now() + 420;
+  if (!motionAllowed()) {
+    doc.style.scrollBehavior = 'auto';
+    scrollTo(0, toY);
+    doc.style.scrollBehavior = '';
+    onScroll();
+    return;
+  }
+  const cap = document.querySelector('#capabilities');
+  const nav = navOffset();
+  const pinned = scrollY;
+  const travel = direction > 0 ? Math.max(1, innerHeight - nav) : Math.max(hero.getBoundingClientRect().height, innerHeight);
+  sceneCover = true;
+  doc.classList.add('is-scene');
+  doc.style.scrollBehavior = 'auto';
+  scrollTo(0, pinned);
+  if (direction > 0) {
+    sceneSpacer.style.height = `${cap.getBoundingClientRect().height}px`;
+    cap.before(sceneSpacer);
+    cap.classList.add('is-scene-next');
+    cap.style.top = `${nav}px`;
+    cap.style.transform = `translate3d(0,${travel}px,0)`;
+  } else {
+    const H = hero.getBoundingClientRect().height;
+    sceneSpacer.style.height = `${H}px`;
+    hero.before(sceneSpacer);
+    hero.classList.add('is-cover');
+    hero.style.height = `${H}px`;
+    hero.style.transform = `translate3d(0,${-travel}px,0)`;
+  }
+  scrollTo(0, pinned);
+  const start = performance.now();
+  const dur = 760;
+  sceneFrame = requestAnimationFrame(function tick(now){
+    const t = Math.min(1, (now - start) / dur);
+    const e = 1 - Math.pow(1 - t, 3);
+    const shift = travel * (1 - e);
+    if (Math.abs(scrollY - pinned) > 1) scrollTo(0, pinned);
+    if (direction > 0) cap.style.transform = `translate3d(0,${shift}px,0)`;
+    else hero.style.transform = `translate3d(0,${-shift}px,0)`;
+    if (t < 1) sceneFrame = requestAnimationFrame(tick);
+    else finishCover();
+  });
+  sceneLockUntil = start + dur + 420;
+}
+addEventListener('wheel', e => {
+  if (!sceneInput() || e.ctrlKey || e.metaKey) return;
+  const dy = wheelDelta(e);
+  if (!dy || Math.abs(e.deltaX) > Math.abs(dy)) return;
+  if (dialog?.open || nestedScroll(e.target, dy)) return;
+  if (performance.now() < sceneLockUntil || sceneFrame) { e.preventDefault(); return; }
+  if (!wheelGesture) wheelGesture = {hero:heroIsScene(), cap:atCapScene()};
+  clearTimeout(wheelIdle);
+  wheelIdle = setTimeout(() => { wheelGesture = null; wheelAccum = 0; }, 180);
+  if (wheelGesture.hero && heroIsScene() && dy > 0) {
+    e.preventDefault();
+    wheelAccum += dy;
+    if (wheelAccum >= 32) { wheelAccum = 0; startCover(1, capSceneY()); }
+  } else if (wheelGesture.cap && atCapScene() && dy < 0) {
+    e.preventDefault();
+    wheelAccum += dy;
+    if (wheelAccum <= -32) { wheelAccum = 0; startCover(-1, 0); }
+  } else wheelAccum = 0;
+}, {passive:false});
+document.addEventListener('click', e => {
+  if (!sceneFrame || !e.target.closest?.('a[href^="#"]')) return;
+  cancelAnimationFrame(sceneFrame);
+  cleanupCover();
+  sceneLockUntil = 0;
+});
+addEventListener('resize', () => { if (sceneFrame) finishCover(false); }, {passive:true});
 
 const safeURL = value => { if (typeof value !== 'string' || !value.trim()) return null; try { const url = new URL(value, location.href); return ['http:','https:'].includes(url.protocol) ? url.href : null; } catch { return null; } };
 const element = (tag, text, className) => { const el = document.createElement(tag); if (text) el.textContent = text; if (className) el.className = className; return el; };
