@@ -53,6 +53,7 @@ function update(){
   const hostBox = linkBox ? navLinks[current].parentElement.getBoundingClientRect() : null;
   progressBar.style.setProperty('--progress', String(!sceneCover && max > 0 ? clamp(scrollY / max) : 0));
   document.body.classList.toggle('is-scrolled', !sceneCover && scrollY > 24);
+  document.body.classList.toggle('show-top', !sceneCover && scrollY > innerHeight * .55);
   hero.style.setProperty('--hy', !sceneCover && heroInView && motion && wide.matches ? String(Math.round(scrollY)) : '0');
   steps.forEach((el, i) => el.classList.toggle('active', i <= Math.floor(fraction * (steps.length - .001))));
   if (frame) frame.style.setProperty('--a', motion ? clamp(fraction * 1.4).toFixed(3) : '1');
