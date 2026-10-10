@@ -328,8 +328,10 @@ footer>a:last-child{display:inline-flex;align-items:center;min-height:44px;borde
   #delivery.is-live .delivery-panel h3{transition:background-size .45s var(--ease)}
   #delivery.is-live .delivery-panel:not(.draw) h3{background-size:0 1.5px}
   .motion-ready .is-in h2{background-size:100% 1.5px;transition:opacity .7s var(--ease),transform .7s var(--ease),background-size .85s var(--ease);transition-delay:var(--d,0s)}
-  .motion-ready .seq{transition:opacity .7s var(--ease),transform .7s var(--ease);transition-delay:var(--d,0s)}
-  .motion-ready .hero:not(.is-in) .seq,.motion-ready .section:not(.is-in) .seq{opacity:0;transform:translateY(16px);transition:none}
+  .motion-ready .section .seq{transition:opacity .8s cubic-bezier(.22,.61,.36,1),transform 1.15s cubic-bezier(.22,.61,.36,1);transition-delay:var(--d,0s)}
+  .motion-ready .section:not(.is-in) .seq{opacity:0;transform:translateY(22px);transition:none}
+  .motion-ready .section:not(.is-in) .seq-down{transform:translateY(-72px)}
+  .motion-ready .section:not(.is-in) .seq-kicker{transform:translateY(-16px)}
   .cap::after{transition:width .45s var(--ease)}
   .cap-num,.cap-name{transition:transform .45s var(--ease)}
   .cap summary:hover .cap-num,.cap summary:focus-visible .cap-num{transform:translateX(4px)}
@@ -597,8 +599,7 @@ html.hero-intro.hero-tabs-in .hero .scope{opacity:1;visibility:visible;transitio
 .inquiry-options input:focus-visible+span{outline:2px solid #111;outline-offset:3px}
 #inquiry-help{font-size:12px;line-height:1.7;margin-top:12px;min-height:42px}
 /* Essential copy is never hidden while waiting for scroll animation. */
-.motion-ready .hero:not(.is-in) .seq,.motion-ready .section:not(.is-in) .seq{opacity:1;transform:none}
-.section.is-in .label{animation:lab-enter .5s var(--ease) both}
+.section.is-in .label:not(.seq){animation:lab-enter .5s var(--ease) both}
 .lab[data-phase=web] .product-art .arc{animation:lab-enter .5s var(--ease)}
 @keyframes lab-enter{from{opacity:.65;translate:0 8px}to{opacity:1;translate:0 0}}
 .product-copy p{font-size:13px;line-height:1.55}
