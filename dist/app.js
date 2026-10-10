@@ -34,8 +34,11 @@ new IntersectionObserver(([entry]) => { heroInView = entry.isIntersecting; if (!
 const navLinks = [...document.querySelectorAll('.nav-links a')];
 const navMark = document.querySelector('.nav-mark');
 const navTargets = navLinks.map(link => document.querySelector(link.getAttribute('href'))).filter(Boolean);
+const navBar = document.querySelector('.nav');
+const navToggle = document.querySelector('.nav-toggle');
 let pending = false;
 let sceneCover = false;
+let glass = false;
 function update(){
   pending = false;
   // Read every rect before writing, so one frame costs one layout.
@@ -52,7 +55,12 @@ function update(){
   const linkBox = current >= 0 ? navLinks[current].getBoundingClientRect() : null;
   const hostBox = linkBox ? navLinks[current].parentElement.getBoundingClientRect() : null;
   progressBar.style.setProperty('--progress', String(!sceneCover && max > 0 ? clamp(scrollY / max) : 0));
-  document.body.classList.toggle('is-scrolled', !sceneCover && scrollY > 24);
+  const menuOpen = navBar?.classList.contains('is-open');
+  if (!menuOpen) {
+    if (!glass && scrollY >= 80) glass = true;
+    else if (glass && scrollY <= 36) glass = false;
+  }
+  document.body.classList.toggle('is-scrolled', !sceneCover && glass);
   document.body.classList.toggle('show-top', !sceneCover && scrollY > innerHeight * .55);
   hero.style.setProperty('--hy', !sceneCover && heroInView && motion && wide.matches ? String(Math.round(scrollY)) : '0');
   steps.forEach((el, i) => el.classList.toggle('active', i <= Math.floor(fraction * (steps.length - .001))));
@@ -74,7 +82,7 @@ function update(){
     if (!linkBox) navMark.style.width = '0px';
     else {
       const inset = parseFloat(getComputedStyle(navLinks[current]).paddingLeft) || 0;
-      navLinks[current].setAttribute('aria-current', 'true');
+      navLinks[current].setAttribute('aria-current', 'location');
       navMark.style.transform = `translate3d(${Math.round(linkBox.left - hostBox.left + inset)}px,0,0)`;
       navMark.style.width = `${Math.max(0, Math.round(linkBox.width - inset * 2))}px`;
     }
@@ -85,6 +93,46 @@ addEventListener('scroll', onScroll, {passive:true});
 addEventListener('resize', onScroll, {passive:true});
 [reduced, finePointer, wide].forEach(query => query.addEventListener('change', () => { resetPointer(); if (sceneFrame && (reduced.matches || !finePointer.matches || !wide.matches)) finishCover(false); syncDeliveryMotion(); placeDeliveryMark(false); onScroll(); }));
 onScroll();
+
+let menuLockY = 0;
+function setMenu(open, restore = true){
+  if (!navToggle || !navBar) return;
+  const wasOpen = navBar.classList.contains('is-open');
+  navBar.classList.toggle('is-open', open);
+  navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  document.documentElement.classList.toggle('nav-lock', open);
+  if (open && !wasOpen) {
+    menuLockY = scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${menuLockY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.width = '100%';
+  } else if (!open && wasOpen) {
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+    document.body.style.width = '';
+    if (restore) scrollTo(0, menuLockY);
+  }
+}
+if (navToggle && navBar) {
+  document.documentElement.classList.add('nav-ready');
+  navToggle.addEventListener('click', () => setMenu(navToggle.getAttribute('aria-expanded') !== 'true'));
+  navBar.addEventListener('click', event => {
+    if (event.target.closest('a[href^="#"]')) setMenu(false, false);
+  });
+  addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || !navBar.classList.contains('is-open')) return;
+    setMenu(false);
+    navToggle.focus();
+  });
+  wide.addEventListener('change', () => { if (wide.matches) setMenu(false); });
+  navBar.addEventListener('transitionend', event => {
+    if (event.target === navBar && (event.propertyName === 'height' || event.propertyName === 'left')) onScroll();
+  });
+}
 
 // Heading first, then the body copy in order, once the section fills the viewport.
 // Reduced motion and no-JS keep every line visible.
