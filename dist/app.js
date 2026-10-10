@@ -223,7 +223,11 @@ if (dialog && typeof dialog.showModal === 'function') {
   });
   dialog.querySelector('.dialog-close').addEventListener('click', () => dialog.close());
   dialog.addEventListener('click', e => { if (e.target === dialog) dialog.close(); });
-  dialog.addEventListener('close', () => { opener?.focus(); opener = null; });
+  dialog.addEventListener('close', () => {
+    const back = opener;
+    opener = null;
+    if (back) requestAnimationFrame(() => back.focus());
+  });
 }
 
 // Scroll remains native; scene state retained for existing shared handlers.
@@ -283,14 +287,43 @@ document.querySelectorAll('[data-project]').forEach(el => projectObserver.observ
 // Interactive production demo; labels and explanatory copy remain in the DOM.
 const modes={plan:{accent:'#f48b29',title:'흩어진 요구사항을, 제작할 수 있는 구조로.',copy:'요구사항 분석 · IA · User Flow · UX 정책 · 화면설계<br>정리되지 않은 아이디어부터 기존 기획 자료의 보완까지 협의합니다.',aside:'구조부터<br>정리하다.',desc:'같은 사이트의 목적·콘텐츠를<br>흐름과 화면 구조로 정리합니다.',checks:'Requirements<br>IA / User flow<br>Screen structure',tag:'01 / UX PLANNING',note:'같은 콘텐츠의 화면 구조를 먼저 정리한 상태'},design:{accent:'#ff623c',title:'사용자 흐름과 브랜드를, 하나의 UI로.',copy:'웹 UI · 반응형 UI · 컴포넌트 · 디자인 시스템<br>기획 자료가 있는 프로젝트도 디자인 구간부터 협의할 수 있습니다.',aside:'구조에<br>브랜드를 더하다.',desc:'같은 콘텐츠와 흐름에<br>타이포·컬러·컴포넌트를 적용합니다.',checks:'Typography<br>Color system<br>Component',tag:'02 / UI DESIGN',note:'같은 화면에 디자인 시스템이 적용된 상태'},web:{accent:'#8760ee',title:'설계한 경험을, 실제 웹 화면과 동작까지.',copy:'반응형 웹 구현 · 인터랙션 · 주요 동작 QA · 배포<br>회원·데이터 등 별도 개발이 필요한 기능은 먼저 범위를 검토합니다.',aside:'화면을<br>동작으로 연결하다.',desc:'Desktop / Mobile 버튼을 눌러<br>같은 콘텐츠의 재배치를 확인하세요.',checks:'Responsive layout<br>Interaction / QA<br>Deployment',tag:'03 / WEB PRODUCTION',note:'구현을 설명하는 데모입니다. 위에서 Desktop / Mobile을 전환해보세요.'}};
 const productionTabs=[...document.querySelectorAll('[data-mode]')];let current='design';
-function select(mode){current=mode;const m=modes[mode];document.documentElement.style.setProperty('--accent',m.accent);document.querySelector('.lab').dataset.phase=mode;productionTabs.forEach(t=>{const on=t.dataset.mode===mode;t.setAttribute('aria-selected',on);t.tabIndex=on?0:-1});document.querySelector('#detail-title').textContent=m.title;document.querySelector('#detail-copy').innerHTML=m.copy;document.querySelector('#production-demo').setAttribute('aria-labelledby','tab-'+mode);document.querySelector('#aside-title').innerHTML=m.aside;document.querySelector('#aside-copy').innerHTML=m.desc;document.querySelector('#lab-checks').innerHTML=m.checks;document.querySelector('#aside-kicker').textContent=m.tag;document.querySelector('#stage-tag').textContent=m.tag;document.querySelector('#phase-note').textContent=m.note;}
+function writePhaseNote(){
+  const mobile = document.querySelector('#product-shell').classList.contains('mobile');
+  const note = modes[current].note + (mobile ? ' 지금은 같은 콘텐츠의 Mobile 배치입니다.' : '');
+  document.querySelector('#phase-note').textContent = note;
+}
+function select(mode){
+  current = mode;
+  const m = modes[mode];
+  document.querySelector('.hero').style.setProperty('--accent', m.accent);
+  document.querySelector('.lab').dataset.phase = mode;
+  productionTabs.forEach(t => {
+    const on = t.dataset.mode === mode;
+    t.setAttribute('aria-selected', on);
+    t.tabIndex = on ? 0 : -1;
+  });
+  document.querySelector('#detail-title').textContent = m.title;
+  document.querySelector('#detail-copy').innerHTML = m.copy;
+  document.querySelector('#production-demo').setAttribute('aria-labelledby', 'tab-' + mode);
+  document.querySelector('#aside-title').innerHTML = m.aside;
+  document.querySelector('#aside-copy').innerHTML = m.desc;
+  document.querySelector('#lab-checks').innerHTML = m.checks;
+  document.querySelector('#aside-kicker').textContent = m.tag;
+  document.querySelector('#stage-tag').textContent = m.tag;
+  writePhaseNote();
+}
 productionTabs.forEach((t,i)=>{t.addEventListener('click',()=>select(t.dataset.mode));t.addEventListener('keydown',e=>{let n=i;if(e.key==='ArrowRight')n=(i+1)%3;else if(e.key==='ArrowLeft')n=(i+2)%3;else if(e.key==='Home')n=0;else if(e.key==='End')n=2;else return;e.preventDefault();select(productionTabs[n].dataset.mode);productionTabs[n].focus()})});document.querySelector('#prev').onclick=()=>select(productionTabs[(productionTabs.findIndex(t=>t.dataset.mode===current)+2)%3].dataset.mode);document.querySelector('#next').onclick=()=>select(productionTabs[(productionTabs.findIndex(t=>t.dataset.mode===current)+1)%3].dataset.mode);
-const devices=[...document.querySelectorAll('[data-device]')];devices.forEach(b=>b.addEventListener('click',()=>{devices.forEach(d=>d.setAttribute('aria-pressed',d===b));document.querySelector('#product-shell').classList.toggle('mobile',b.dataset.device==='mobile');document.querySelector('#phase-note').textContent=b.dataset.device==='mobile'?'같은 콘텐츠를 세로 흐름으로 재배치한 Mobile 데모':'같은 콘텐츠를 넓은 화면에 배치한 Desktop 데모'}));
+const devices=[...document.querySelectorAll('[data-device]')];
+devices.forEach(b => b.addEventListener('click', () => {
+  devices.forEach(d => d.setAttribute('aria-pressed', d === b));
+  document.querySelector('#product-shell').classList.toggle('mobile', b.dataset.device === 'mobile');
+  writePhaseNote();
+}));
 
 document.querySelector('.demo-button').addEventListener('click',e=>{const button=e.currentTarget;const panel=document.querySelector('#demo-more');panel.hidden=!panel.hidden;button.setAttribute('aria-expanded',String(!panel.hidden));button.textContent=panel.hidden?'Explore ↓':'Close ↑'});
 const collaboration=document.querySelector('.collaboration-choice');collaboration.hidden=false;
 const collabTabs=[...document.querySelectorAll('[data-collab]')];
-const collabData={full:{areas:['brief','ux','ui','web','qa']},partial:{areas:['ui','web']},white:{areas:['ux','ui','web','qa']},long:{areas:['ux','ui','web','qa']}};
+const collabData={full:{areas:['brief','ux','ui','web','qa']},partial:{areas:['ui','web']},white:{areas:['ux','ui','web','qa']},long:{areas:['brief','ux','ui','web','qa']}};
 collabData.full.text='요구사항에서 공개까지, 전체 제작 범위를 프로젝트에 맞춰 협의합니다.';
 collabData.partial.text='기존 기획·디자인 자료를 확인하고 팀에 필요한 업무 구간을 정합니다. 강조된 구간은 예시이며, 실제 참여 범위는 협의합니다.';
 collabData.white.text='대행사가 최종 고객과 소통하고, 이서아가 합의한 제작 범위를 담당합니다. 커뮤니케이션·공개 범위와 NDA는 사전에 협의합니다.';

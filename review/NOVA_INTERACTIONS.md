@@ -1,24 +1,65 @@
-# Production lab interactions — 2026-10-10
+# Production lab interactions — 브라우저 검수 2026-10-10
 
-Base: Cursor main `2c7cf5ab0001f6195c1bb669af2e3bd9524d8f16`.
+기준: Cursor main `2c7cf5ab0001f6195c1bb669af2e3bd9524d8f16`.
+NOVA 커밋: `6c9730e128b7d415cfbd39a8e1aafad83bd5b0e1`.
+원격 main은 그 이후 추가 커밋이 없었다. 검수는 `nova/production-lab-interactions`에서 로컬 미리보기 `http://127.0.0.1:8080`으로 했다.
 
-## Implemented
+## 검수 후 수정
 
-- White hero with one illustrative website across UX planning, UI design and web production stages. Korean business copy retained.
-- Keyboard-accessible stage tabs; Desktop/Mobile reflow; working Explore disclosure. Demo explicitly distinguished from customer work.
-- Partnership scope selector with illustrative task map and agreed-scope disclaimer.
-- Project-situation radios prefill the existing email composer. No information storage or backend.
-- System layers receive lightweight viewport highlights. Native scrolling replaces the prior wheel interception.
-- Essential copy stays visible before animations; reduced motion retained.
-- Existing work zoom, delivery tabs, introduction PDF, content extension points and analytics hooks retained.
-- Direct email link restored to mailto behavior. Prior project captures labeled as previous published version.
+- 제작 단계 색은 히어로 안에서만 바뀌게 했다. 히어로 탭이 협업·납품 탭의 선택 상태를 바꾸지 않고, 협업 탭 색도 따라 바뀌지 않는다.
+- 같은 데모의 도형 위치, 버튼, 모듈 테두리가 기획 → 디자인 → 웹 제작으로 550ms에 이어진다. 본문 문장은 숨기지 않는다.
+- Desktop / Mobile 전환이 단계 설명을 지우지 않고, Mobile일 때만 같은 문장 뒤에 배치 안내를 붙인다.
+- 좁은 데모 폭에서는 화면이 한 열로 쌓이고, 데모 본문은 12px 이상으로 올린다.
+- 작업 화면 확대 후 닫으면 열었던 버튼으로 포커스가 돌아간다.
+- 장기 협업 예시는 요구사항부터 QA·배포까지 포함한다.
 
-## Validation
+## 화면
 
-`npm run build` and `npm run check`: PASS locally. Metadata, canonical, Google/Naver verification, robots, sitemap and real contact unchanged.
+로컬 미리보기, 레이아웃 뷰포트 기준.
 
-Actual rendering, interaction runtime, mobile overflow and performance: pending browser review. Local Playwright browser download was unavailable. Do not claim visual QA or production release from static checks alone.
+| 크기 | 결과 |
+| --- | --- |
+| 320×568 | 문서 가로 넘침 없음. 제목 32px. 데모는 한 열, 본문 12px. |
+| 390×844 | 문서 가로 넘침 없음. 히어로 CTA가 보일 때 하단 문의 막대는 숨고, 스크롤 뒤에는 소개서·맨 위·문의 막대가 겹치지 않음(간격 10px, 16px). |
+| 768×1024 | 가로 넘침 없음. 단계 옆 설명 패널은 900px 이하에서 숨고, 왼쪽 설명과 데모는 남음. |
+| 1024×768 | 가로 넘침 없음. 3열 데모와 단계 설명 패널이 보임. |
+| 1440×900 | 가로 넘침 없음. 제목·업무 탭·CTA가 화면 안에 있음. 데모 카드는 제목 아래라 첫 화면 하단에서 시작됨. |
+| 200% 대응 | 1440×900의 200%에 해당하는 720×450 CSS 뷰포트, deviceScaleFactor 2. 가로 넘침 없음. 실제 모니터의 브라우저 확대 UI는 따로 누르지 않음. |
 
-## Release
+## 인터랙션
 
-Feature branch and Vercel Preview for review; merge to main only after runtime verification. Retain current production deployment while review is pending.
+확인함.
+
+- 히어로 3탭 클릭, ArrowRight / ArrowLeft / Home / End, 이전·다음 버튼.
+- Desktop / Mobile. Mobile은 255px로 좁아지기 시작하고, 단계 문장은 유지됨.
+- Explore 펼침·닫힘, `aria-expanded` true/false.
+- 히어로 탭을 바꿔도 납품·협업의 선택 탭은 유지됨.
+- 협업 4탭 클릭과 방향키·Home. 필요한 구간은 UI/UX·웹 제작만 강조. White-label은 요구사항을 빼고 UX부터 QA·배포. 전체 제작과 장기 협업은 다섯 구간을 모두 강조하고 문장으로 구분.
+- 문의 라디오 3종. 안내 문장과 mailto 제목·본문의 한글이 맞게 인코딩됨. 주소는 `seoah.lab@gmail.com`.
+- 이메일 주소 링크 `href`는 `mailto:seoah.lab@gmail.com`. 운영체제 메일 작성 창이 열렸는지는 확인하지 않음.
+- 전화 링크 `tel:+821068566622`. 실제 통화 앱은 확인하지 않음.
+- 데스크톱 화면 확대, 닫기 버튼, 포커스가 확대 버튼으로 복귀. Escape 키 입력은 따로 누르지 않음.
+- 납품 탭 ArrowRight가 콘텐츠 수정으로 이동하고 히어로 단계는 유지됨.
+- 휠을 가로채는 전환 코드는 없음. 앵커 이동은 브라우저 기본 스크롤.
+- 소개서 PDF는 `200 application/octet-stream`. 파일 내용과 저장 대화상자는 확인하지 않음.
+- 사례 이미지 `work-desktop.webp`, `work-desktop-600.webp`, `work-mobile.webp`는 200이고 로드됨. 캡션은 이전 공개 버전으로 유지.
+
+## 접근성·모션
+
+- 히어로·협업·납품 탭의 키보드 이동과 선택 상태는 위 항목대로 확인.
+- 페이지 전체 Tab 순서와 스크린 리더 낭독은 확인하지 않음.
+- `prefers-reduced-motion: reduce`를 브라우저에서 흉내 냄. 제목·본문 opacity 1, 전환 시간은 약 0.01ms, 레이어 이동 없음. 운영체제 설정 자체는 확인하지 않음.
+- JavaScript를 끈 브라우저 세션은 열지 않음. HTML 기준으로는 협업 선택과 문의 라디오가 숨겨지고, 타임라인·mailto·전화·납품 내용은 문서에 남아 있음.
+- 선택된 히어로 탭 글자는 검정, 밑줄만 단계 색. 작은 영어 라벨은 보조 색이라 본문 대비와 같지 않음.
+
+## 빌드
+
+`npm run build` PASS. `npm run check` PASS.
+콘솔 로그 파일을 저장하지는 않았고, 위 스크립트 조작 중 예외로 멈춘 동작은 없었다.
+Lighthouse, CWV, 실기기, Vercel Preview 로그인 뒤 화면은 확인하지 않음.
+
+## 릴리스
+
+main 병합과 Production 배포는 하지 않았다.
+Vercel Preview는 이전 커밋 기준 배포가 Ready였고 로그인 보호라 화면 검수는 로컬에서만 했다. 이 수정 푸시 이후 Preview는 CI가 다시 만들어야 한다.
+SonarQube Quality Gate는 이 검수 전에 Maintainability Rating으로 실패했고, 이번 수정 뒤 재측정하지 않았다.

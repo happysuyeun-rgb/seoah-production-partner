@@ -459,11 +459,11 @@ html{scroll-padding-top:80px}
 .scope{display:flex;max-width:680px;justify-content:center;margin:auto}
 .scope button{flex:1;min-width:0;min-height:58px;border:0;border-bottom:1px solid #ddd;background:transparent;cursor:pointer;font-size:14px;padding:12px 8px}
 .scope button span{display:block;font-size:9px;letter-spacing:.07em;color:#777;margin-top:5px}
-.scope button[aria-selected=true]{border-bottom:2px solid var(--accent);color:var(--accent)}
+.scope button[aria-selected=true]{border-bottom:2px solid var(--accent);color:#1a1a1a}
 .lab-stage>*,.product-hero>*,.product-modules>*{min-width:0}
 .product-hero{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
 .product-copy h2{font-weight:850}
-.product-shell{container-type:inline-size;transition:none}
+.product-shell{container-type:inline-size}
 .product-copy h2{font-size:clamp(18px,7cqw,47px)}
 .product-nav span,.product-shell .chrome span,.product-copy small{overflow-wrap:anywhere}
 .lab-top{flex-wrap:wrap}
@@ -505,14 +505,34 @@ html{scroll-padding-top:80px}
 .section.is-in .label{animation:lab-enter .5s var(--ease) both}
 .lab[data-phase=web] .product-art .arc{animation:lab-enter .5s var(--ease)}
 @keyframes lab-enter{from{opacity:.65;translate:0 8px}to{opacity:1;translate:0 0}}
+.product-copy p{font-size:13px;line-height:1.55}
+.product-copy small{font-size:11px}
+.product-art>span,.wire-label{opacity:0;visibility:hidden}
+.lab[data-phase=plan] .product-art>span,.lab[data-phase=plan] .wire-label{display:block;opacity:1;visibility:visible}
+.lab[data-phase=web] .product-art .sun{transform:translate(-24px,28px) scale(.7)}
+.lab[data-phase=web] .product-art .arc{transform:rotate(-6deg) translate(6px,-12px)}
+.lab[data-phase=web] .product-art .wedge{transform:rotate(-6deg) translate(-28px,8px)}
+.lab[data-phase=web] .product-modules div{border:1px solid #241c1a}
+.lab[data-phase=web] .demo-button{background:#2a2148;border-radius:4px}
+.product,.product-nav,.product-copy h2,.product-art,.product-art .sun,.product-art .arc,.product-art .wedge,.product-modules div,.demo-button,.wire-label,.product-art>span{transition:background-color .55s var(--ease),color .55s var(--ease),border-color .55s var(--ease),opacity .55s var(--ease),transform .55s var(--ease),box-shadow .55s var(--ease),visibility .55s}
+@media (min-width:761px){
+  .product-shell{transition:width .55s var(--ease),max-width .55s var(--ease),border-radius .55s var(--ease)}
+}
+@container (max-width:520px){
+  .product-hero,.product-modules{grid-template-columns:minmax(0,1fr)}
+  .product-art{min-height:148px}
+  .product-copy h2{font-size:clamp(26px,14cqw,36px)}
+  .product-copy p{font-size:13px}
+}
 @media(max-width:900px){.lab-stage{grid-template-columns:120px minmax(0,1fr);gap:15px}.stage-note{display:none}.lab-aside h3{font-size:21px}.product-copy{padding:16px}}
 @media(max-width:600px){
  .hero{padding:105px 16px 45px}.hero-title{font-size:clamp(32px,7.7vw,46px)}.hero-eyebrow{font-size:11px}.hero-lead{font-size:14px}.hero-trust{font-size:12px}.hero-actions{gap:12px}.hero-actions .button{font-size:13px}
- .scope button{font-size:12px}.scope button span{font-size:7px}
+ .scope button{font-size:13px}.scope button span{font-size:10px;letter-spacing:.04em}
  .lab{padding:14px;margin-top:24px}.lab-top>span{flex:1 1 100%;font-size:9px}.device-controls{margin-left:auto}
+ .product-art .sun,.product-art .arc,.product-art .wedge{transition:opacity .55s var(--ease),background-color .55s var(--ease)}
  .lab-stage{grid-template-columns:minmax(0,1fr);padding:20px 0;min-height:0}.lab-aside{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:center}.aside-kicker{grid-column:1/-1}.lab-aside h3{font-size:20px;margin:4px 0}.lab-aside p{font-size:10px}.lab-checks{display:none}
- .product-copy{padding:12px}.product-copy h2{font-size:clamp(18px,7cqw,32px)}.product-copy small{font-size:6px;letter-spacing:0}.product-copy p{font-size:9px}.product-nav{padding:12px;font-size:6px}.product-nav b{font-size:14px}
- .product-modules{padding:8px;gap:5px;grid-template-columns:repeat(3,minmax(0,1fr))}.product-modules div{padding:9px 5px}.product-modules b{font-size:9px}.product-modules span{font-size:7px}
+ .product-copy{padding:12px}.product-copy h2{font-size:clamp(22px,8cqw,32px)}.product-copy small{font-size:10px;letter-spacing:.04em}.product-copy p{font-size:12px;line-height:1.55}.product-nav{padding:12px;font-size:10px}.product-nav b{font-size:14px}
+ .product-modules{padding:8px;gap:5px;grid-template-columns:repeat(3,minmax(0,1fr))}.product-modules div{padding:9px 5px}.product-modules b{font-size:12px}.product-modules span{font-size:11px}.product-modules small{font-size:10px}
  .product-shell.mobile .product-copy h2{font-size:clamp(28px,16cqw,37px)}.product-shell.mobile .product-hero,.product-shell.mobile .product-modules{grid-template-columns:minmax(0,1fr)}
  .lab-bottom{display:block}.lab-bottom>span{display:block;max-width:none;margin-top:7px}.readout strong{font-size:17px}.readout p{font-size:12px}
  .collaboration-choice [role=tablist]{grid-template-columns:repeat(2,minmax(0,1fr))}.scope-map{grid-template-columns:minmax(0,1fr);gap:6px}.scope-map li{text-align:left;padding:12px 16px}.inquiry-options>div{grid-template-columns:minmax(0,1fr)}
