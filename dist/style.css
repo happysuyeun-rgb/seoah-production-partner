@@ -292,6 +292,18 @@ footer>a:last-child{display:inline-flex;align-items:center;min-height:44px;borde
   .to-top,.to-top-arrow{transition:opacity .25s var(--ease),visibility .25s var(--ease),transform .45s var(--ease),background-color .45s var(--ease),color .45s var(--ease)}
   .show-top .to-top:hover,.show-top .to-top:focus-visible{background:#111;color:#fff;transform:translateY(-4px)}
   .show-top .to-top:hover .to-top-arrow,.show-top .to-top:focus-visible .to-top-arrow{transform:translateY(-3px)}
+  .hero-cta-arrow{transition:transform .45s var(--ease)}
+  .hero-actions .button:hover .hero-cta-arrow,.hero-actions .button:focus-visible .hero-cta-arrow{transform:translateX(6px)}
+  .stage-card,.plan-root,.plan-branch span,.wire,.poster,.browser,.phone{transition:transform .5s var(--ease),box-shadow .5s var(--ease)}
+  .stage-card:hover{transform:translateY(-8px);box-shadow:0 18px 36px rgba(40,30,20,.08)}
+  .stage-card:hover .plan-root{transform:translateX(-6px)}
+  .stage-card:hover .plan-branch span:nth-child(1){transform:translateX(8px)}
+  .stage-card:hover .plan-branch span:nth-child(2){transform:translateX(12px)}
+  .stage-card:hover .plan-branch span:nth-child(3){transform:translateX(8px)}
+  .stage-card:hover .wire{transform:translateX(-8px)}
+  .stage-card:hover .poster{transform:translate(8px,-6px) rotate(2deg)}
+  .stage-card:hover .browser{transform:translateX(-6px)}
+  .stage-card:hover .phone{transform:translate(8px,-10px)}
   .hero-field{transform:translate3d(var(--px,0px),calc(var(--py,0px) + var(--hy,0) * .18px),0)}
   .hero-title{transform:translate3d(0,calc(var(--hy,0) * .08px),0)}
   .nav-mark{transition:transform .35s var(--ease),width .35s var(--ease)}
@@ -454,7 +466,10 @@ html{scroll-padding-top:80px}
 .hero-title{max-width:none;margin:20px auto;font-size:clamp(36px,5.4vw,76px)}
 .hero-title em{color:var(--accent);background-image:none}
 .hero-copy{max-width:760px;margin:auto}
-.hero-actions{justify-content:center;margin:24px 0 36px}
+.hero-actions{justify-content:center;width:100%;margin:24px 0 36px}
+.hero-actions .button{border-radius:999px;padding:0 22px 0 26px;opacity:1}
+.hero-actions .button:hover,.hero-actions .button:focus-visible{opacity:1}
+.hero-cta-arrow{display:block;flex:0 0 auto}
 .hero-eyebrow .tag{font-size:11px;letter-spacing:.12em}
 .scope{display:flex;max-width:680px;justify-content:center;margin:auto}
 .scope button{flex:1;min-width:0;min-height:58px;border:0;border-bottom:1px solid #ddd;background:transparent;cursor:pointer;font-size:14px;padding:12px 8px}
@@ -537,4 +552,41 @@ html{scroll-padding-top:80px}
  .lab-bottom{display:block}.lab-bottom>span{display:block;max-width:none;margin-top:7px}.readout strong{font-size:17px}.readout p{font-size:12px}
  .collaboration-choice [role=tablist]{grid-template-columns:repeat(2,minmax(0,1fr))}.scope-map{grid-template-columns:minmax(0,1fr);gap:6px}.scope-map li{text-align:left;padding:12px 16px}.inquiry-options>div{grid-template-columns:minmax(0,1fr)}
 }
-@media(prefers-reduced-motion:reduce){.section.is-in .label,.lab[data-phase=web] .product-art .arc{animation:none}.layers li{transform:none!important;transition:none}.product-shell{transition:none}}
+@media(prefers-reduced-motion:reduce){.section.is-in .label,.lab[data-phase=web] .product-art .arc{animation:none}.layers li{transform:none!important;transition:none}.product-shell{transition:none}.stage-card:hover,.stage-card:hover .plan-root,.stage-card:hover .plan-branch span,.stage-card:hover .wire,.stage-card:hover .poster,.stage-card:hover .browser,.stage-card:hover .phone{transform:none}}
+.partnership .stage-intro{display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:28px}
+.partnership .stage-intro .label{letter-spacing:.16em}
+.partnership .stage-intro h2{max-width:12em}
+.partnership .stage-intro .section-lead{max-width:28em}
+.stage-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+.stage-card{min-width:0;padding:22px 20px 26px;border:1px solid rgba(0,0,0,.04);border-radius:22px;background:#fff;box-shadow:0 10px 28px rgba(40,30,20,.04)}
+.stage-kicker{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px;font-weight:600;letter-spacing:.08em;color:#8a8178}
+.stage-kicker span{color:#e25b32}
+.stage-art{display:flex;align-items:center;justify-content:center;min-height:168px;margin:8px 0 18px}
+.stage-card h3{margin-bottom:8px;font-size:22px;letter-spacing:-.04em}
+.stage-card p:last-child{font-size:14px;line-height:1.65;color:#6d675f}
+.plan-art{display:grid;grid-template-columns:auto 40px minmax(0,1fr);align-items:center;width:100%;justify-content:stretch}
+.plan-root{justify-self:start;padding:12px 14px;border-radius:999px;background:#ece7f8;color:#6d63b2;font-size:13px;font-weight:600}
+.plan-link{width:40px;height:96px}
+.plan-branch{display:grid;gap:8px}
+.plan-branch span{padding:8px 12px;border-radius:10px;background:#f7f1ea;font-size:13px;font-weight:500;color:#3c3834}
+.design-art{gap:10px}
+.wire{display:grid;gap:8px;width:72px;padding:12px;border-radius:8px;background:#fff;box-shadow:0 8px 18px rgba(40,30,20,.06)}
+.wire i{height:22px;border-radius:3px;background:#eceae6}
+.wire b{height:6px;border-radius:99px;background:#e4e0da}
+.wire b.short{width:70%}
+.design-arrow{color:#c5beb6;font-size:18px}
+.poster{position:relative;width:118px;min-height:108px;padding:14px 12px;overflow:hidden;border-radius:8px;background:#f6d2bf;box-shadow:0 10px 18px rgba(180,90,50,.12)}
+.poster strong{position:relative;z-index:1;font-size:15px;line-height:1.05;letter-spacing:-.04em}
+.poster .tri{position:absolute;left:0;bottom:0;width:62px;height:42px;background:#7d6ad8;clip-path:polygon(0 100%,100% 100%,0 0)}
+.poster .block{position:absolute;right:0;bottom:0;width:56px;height:28px;background:#e7a15a}
+.build-art{position:relative;width:100%}
+.browser{position:relative;width:min(210px,78%);overflow:hidden;border:3px solid #243044;border-radius:12px;background:#6d5ce0}
+.browser-dots{display:flex;gap:4px;padding:7px 8px;background:#243044}
+.browser-dots i{width:5px;height:5px;border-radius:50%;background:#d7d3ea}
+.browser strong{display:block;max-width:68%;padding:12px 8px 34px 12px;color:#fff;font-size:12px;letter-spacing:.02em;white-space:nowrap}
+.browser-split{position:absolute;right:0;bottom:0;width:46%;height:46%;background:#ecd7b4}
+.phone{position:absolute;right:6%;bottom:16px;display:grid;place-items:center;width:62px;height:96px;border:3px solid #243044;border-radius:12px;background:#f4e7d4}
+.phone strong{font-size:9px;letter-spacing:.02em;white-space:nowrap}
+.phone span{align-self:flex-end;font-size:16px;line-height:1}
+.stage-foot{margin-top:28px;text-align:center;font-size:13px;color:#8a8178}
+@media(max-width:900px){.stage-cards{grid-template-columns:1fr}.stage-art{min-height:150px}}
