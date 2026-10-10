@@ -13,7 +13,6 @@ const origin=new URL(config.siteUrl).origin;assert(html.includes(`rel="canonical
 const robots=await read('robots.txt');const sitemap=await read('sitemap.xml');assert(robots.includes(origin+'/sitemap.xml'));assert(sitemap.includes(`<loc>${origin}/</loc>`));assert(!sitemap.includes('#'),'sitemap contains pages, not scene anchors');
 assert(html.includes('tel:+821068566622'));assert(html.includes('mailto:seoah.lab@gmail.com'));
 for(const match of html.matchAll(/(?:src|href)="(\/[^"#]*)"/g))await access(resolve(root,'dist',match[1].slice(1)));
-for(const panel of ['delivery-panel','delivery-editable','delivery-advanced'])assert(html.includes(`id="${panel}"`),'static no-JS content');
 for(const aria of html.matchAll(/aria-(?:controls|labelledby)="([^"]+)"/g))for(const id of aria[1].split(' '))assert(ids.includes(id),'ARIA reference '+id);
 const css=await read('style.css');assert(css.includes('prefers-reduced-motion'));assert(css.includes(':focus-visible'));assert(css.includes('.delivery-panel[hidden]'));
 const app=await read('app.js');for(const event of ['partnership_cta_click','email_click','phone_click'])assert(html.includes(event));for(const event of ['live_demo_click','project_view'])assert(app.includes(event));

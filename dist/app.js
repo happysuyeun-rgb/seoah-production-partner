@@ -34,8 +34,11 @@ new IntersectionObserver(([entry]) => { heroInView = entry.isIntersecting; if (!
 const navLinks = [...document.querySelectorAll('.nav-links a')];
 const navMark = document.querySelector('.nav-mark');
 const navTargets = navLinks.map(link => document.querySelector(link.getAttribute('href'))).filter(Boolean);
+const navBar = document.querySelector('.nav');
+const navToggle = document.querySelector('.nav-toggle');
 let pending = false;
 let sceneCover = false;
+let glass = false;
 function update(){
   pending = false;
   // Read every rect before writing, so one frame costs one layout.
@@ -52,7 +55,12 @@ function update(){
   const linkBox = current >= 0 ? navLinks[current].getBoundingClientRect() : null;
   const hostBox = linkBox ? navLinks[current].parentElement.getBoundingClientRect() : null;
   progressBar.style.setProperty('--progress', String(!sceneCover && max > 0 ? clamp(scrollY / max) : 0));
-  document.body.classList.toggle('is-scrolled', !sceneCover && scrollY > 24);
+  const menuOpen = navBar?.classList.contains('is-open');
+  if (!menuOpen) {
+    if (!glass && scrollY >= 80) glass = true;
+    else if (glass && scrollY <= 36) glass = false;
+  }
+  document.body.classList.toggle('is-scrolled', !sceneCover && glass);
   document.body.classList.toggle('show-top', !sceneCover && scrollY > innerHeight * .55);
   hero.style.setProperty('--hy', !sceneCover && heroInView && motion && wide.matches ? String(Math.round(scrollY)) : '0');
   steps.forEach((el, i) => el.classList.toggle('active', i <= Math.floor(fraction * (steps.length - .001))));
@@ -74,7 +82,7 @@ function update(){
     if (!linkBox) navMark.style.width = '0px';
     else {
       const inset = parseFloat(getComputedStyle(navLinks[current]).paddingLeft) || 0;
-      navLinks[current].setAttribute('aria-current', 'true');
+      navLinks[current].setAttribute('aria-current', 'location');
       navMark.style.transform = `translate3d(${Math.round(linkBox.left - hostBox.left + inset)}px,0,0)`;
       navMark.style.width = `${Math.max(0, Math.round(linkBox.width - inset * 2))}px`;
     }
@@ -85,6 +93,46 @@ addEventListener('scroll', onScroll, {passive:true});
 addEventListener('resize', onScroll, {passive:true});
 [reduced, finePointer, wide].forEach(query => query.addEventListener('change', () => { resetPointer(); if (sceneFrame && (reduced.matches || !finePointer.matches || !wide.matches)) finishCover(false); syncDeliveryMotion(); placeDeliveryMark(false); onScroll(); }));
 onScroll();
+
+let menuLockY = 0;
+function setMenu(open, restore = true){
+  if (!navToggle || !navBar) return;
+  const wasOpen = navBar.classList.contains('is-open');
+  navBar.classList.toggle('is-open', open);
+  navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  document.documentElement.classList.toggle('nav-lock', open);
+  if (open && !wasOpen) {
+    menuLockY = scrollY;
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${menuLockY}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.width = '100%';
+  } else if (!open && wasOpen) {
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+    document.body.style.width = '';
+    if (restore) scrollTo(0, menuLockY);
+  }
+}
+if (navToggle && navBar) {
+  document.documentElement.classList.add('nav-ready');
+  navToggle.addEventListener('click', () => setMenu(navToggle.getAttribute('aria-expanded') !== 'true'));
+  navBar.addEventListener('click', event => {
+    if (event.target.closest('a[href^="#"]')) setMenu(false, false);
+  });
+  addEventListener('keydown', event => {
+    if (event.key !== 'Escape' || !navBar.classList.contains('is-open')) return;
+    setMenu(false);
+    navToggle.focus();
+  });
+  wide.addEventListener('change', () => { if (wide.matches) setMenu(false); });
+  navBar.addEventListener('transitionend', event => {
+    if (event.target === navBar && (event.propertyName === 'height' || event.propertyName === 'left')) onScroll();
+  });
+}
 
 // Heading first, then the body copy in order, once the section fills the viewport.
 // Reduced motion and no-JS keep every line visible.
@@ -122,6 +170,79 @@ const sectionWatch = new IntersectionObserver(entries => {
   });
 }, {threshold:[0,.2,.35,.5,.75]});
 document.querySelectorAll('.hero, .section').forEach(section => { primeSequence(section); sectionWatch.observe(section); });
+
+// First view: dust gathers into each English letter at the viewport center, then the line settles and the hero follows.
+async function playHeroIntro(){
+  const root = document.documentElement;
+  const brand = document.querySelector('.hero-brand');
+  if (!root.classList.contains('hero-intro') || !motionAllowed() || !brand) {
+    root.classList.remove('hero-intro');
+    document.dispatchEvent(new Event('hero-title-ready'));
+    return;
+  }
+  if (document.fonts?.ready) await document.fonts.ready;
+  const letters = [...document.querySelectorAll('.hero-letter')];
+  letters.forEach(letter => {
+    const glyph = document.createElement('span');
+    glyph.className = 'hero-glyph';
+    glyph.textContent = letter.textContent;
+    letter.textContent = '';
+    letter.append(glyph);
+    for (let i = 0; i < 8; i++) {
+      const dust = document.createElement('i');
+      dust.className = 'hero-dust';
+      dust.setAttribute('aria-hidden', 'true');
+      const spread = 16 + Math.random() * 42;
+      const angle = Math.random() * Math.PI * 2;
+      dust.style.setProperty('--x', `${(Math.cos(angle) * spread).toFixed(1)}px`);
+      dust.style.setProperty('--y', `${(Math.sin(angle) * spread).toFixed(1)}px`);
+      dust.style.setProperty('--r', `${Math.floor(Math.random() * 360)}deg`);
+      letter.append(dust);
+    }
+  });
+  const centerX = innerWidth / 2;
+  const centerY = innerHeight / 2;
+  root.classList.add('hero-prep');
+  letters.forEach(letter => {
+    const box = letter.getBoundingClientRect();
+    letter.style.setProperty('--tx', `${(centerX - (box.left + box.width / 2)).toFixed(1)}px`);
+    letter.style.setProperty('--ty', `${(centerY - (box.top + box.height / 2)).toFixed(1)}px`);
+    letter.style.setProperty('--spin', `${(Math.random() * 70 - 35).toFixed(1)}deg`);
+  });
+  void brand.offsetWidth;
+  root.classList.remove('hero-prep');
+  const step = 120;
+  const dustLead = 260;
+  letters.forEach((letter, index) => {
+    setTimeout(() => letter.classList.add('is-dust'), index * step);
+    setTimeout(() => letter.classList.add('is-on'), index * step + dustLead);
+  });
+  const opened = (letters.length - 1) * step + dustLead + 760;
+  const mark = (name, at) => setTimeout(() => root.classList.add(name), opened + at);
+  setTimeout(() => root.classList.add('hero-fade', 'hero-title-in'), opened);
+  setTimeout(() => {
+    root.classList.add('hero-prep', 'hero-settle');
+    root.classList.remove('hero-fade');
+    letters.forEach(letter => letter.classList.add('is-seat'));
+    void brand.offsetWidth;
+    root.classList.remove('hero-prep');
+    letters.forEach((letter, index) => setTimeout(() => letter.classList.add('is-seated'), index * 46));
+  }, opened + 900);
+  setTimeout(() => document.dispatchEvent(new Event('hero-title-ready')), opened);
+  mark('hero-line-in', 320);
+  mark('hero-lead-in', 680);
+  mark('hero-action-in', 680);
+  mark('hero-tabs-in', 1020);
+  mark('hero-lab-in', 1020);
+  setTimeout(() => {
+    root.classList.remove('hero-intro', 'hero-settle', 'hero-prep', 'hero-fade', 'hero-title-in', 'hero-line-in', 'hero-lead-in', 'hero-action-in', 'hero-tabs-in', 'hero-lab-in');
+    letters.forEach(letter => {
+      letter.classList.remove('is-seat', 'is-seated');
+      letter.querySelectorAll('.hero-dust').forEach(dust => dust.remove());
+    });
+  }, opened + 3900);
+}
+playHeroIntro();
 
 // The work frame draws once as the screenshot enters. The picture stays visible the whole time.
 const stage = document.querySelector('.preview-stage');
@@ -185,6 +306,7 @@ function selectTab(tab, animateMark = true){
   } else panel?.classList.add('draw');
   placeDeliveryMark(animateMark);
 }
+if (tabs.length) {
 syncDeliveryMotion();
 selectTab(tabs[0], false);
 addEventListener('resize', () => placeDeliveryMark(false), {passive:true});
@@ -201,6 +323,7 @@ tabs.forEach((tab, i) => {
     e.preventDefault(); selectTab(tabs[n]); tabs[n].focus();
   });
 });
+}
 
 const dialog = document.querySelector('#preview-dialog');
 if (dialog && typeof dialog.showModal === 'function') {
@@ -223,134 +346,16 @@ if (dialog && typeof dialog.showModal === 'function') {
   });
   dialog.querySelector('.dialog-close').addEventListener('click', () => dialog.close());
   dialog.addEventListener('click', e => { if (e.target === dialog) dialog.close(); });
-  dialog.addEventListener('close', () => { opener?.focus(); opener = null; });
+  dialog.addEventListener('close', () => {
+    const back = opener;
+    opener = null;
+    if (back) requestAnimationFrame(() => back.focus());
+  });
 }
 
-// Hero scene: one mouse-wheel gesture on the hero lifts that screen away and reveals 제작 범위.
-// Touch, narrow viewports, keyboard, and in-page scrolling below that screen stay native.
-let sceneFrame = 0;
-let sceneLockUntil = 0;
-let sceneToY = 0;
-let wheelAccum = 0;
-let wheelGesture = null;
-let wheelIdle = 0;
-const sceneSpacer = document.createElement('div');
-sceneSpacer.setAttribute('aria-hidden', 'true');
-sceneSpacer.style.cssText = 'display:block;width:100%;pointer-events:none';
-const sceneInput = () => finePointer.matches && wide.matches && hero.getBoundingClientRect().height >= innerHeight * .92;
-const navOffset = () => { const n = parseFloat(getComputedStyle(doc).scrollPaddingTop); return Number.isFinite(n) ? n : 64; };
-const capSceneY = () => Math.max(0, Math.round(document.querySelector('#capabilities').getBoundingClientRect().top + scrollY - navOffset()));
-const heroIsScene = () => { const r = hero.getBoundingClientRect(); return r.top >= -2 && r.top <= 2 && r.bottom >= innerHeight - 4; };
-const atCapScene = () => Math.abs(document.querySelector('#capabilities').getBoundingClientRect().top - navOffset()) <= 16;
-const wheelDelta = e => e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * innerHeight : e.deltaY;
-function nestedScroll(target, dy){
-  for (let el = target instanceof Element ? target : null; el && el !== doc; el = el.parentElement) {
-    const oy = getComputedStyle(el).overflowY;
-    if ((oy === 'auto' || oy === 'scroll') && el.scrollHeight > el.clientHeight + 1) {
-      if (dy > 0 && el.scrollTop + el.clientHeight < el.scrollHeight - 1) return true;
-      if (dy < 0 && el.scrollTop > 1) return true;
-    }
-  }
-  return false;
-}
-function cleanupCover(){
-  const cap = document.querySelector('#capabilities');
-  sceneCover = false;
-  sceneFrame = 0;
-  doc.classList.remove('is-scene');
-  cap.classList.remove('is-scene-next');
-  cap.style.top = '';
-  cap.style.transform = '';
-  hero.classList.remove('is-cover');
-  hero.style.height = '';
-  hero.style.transform = '';
-  sceneSpacer.remove();
-  doc.style.scrollBehavior = '';
-}
-function finishCover(lock = true){
-  const y = sceneToY;
-  cancelAnimationFrame(sceneFrame);
-  cleanupCover();
-  doc.style.scrollBehavior = 'auto';
-  scrollTo(0, y);
-  doc.style.scrollBehavior = '';
-  sceneLockUntil = lock ? performance.now() + 420 : 0;
-  onScroll();
-}
-function startCover(direction, toY){
-  if (sceneFrame || performance.now() < sceneLockUntil) return;
-  sceneToY = toY;
-  sceneLockUntil = performance.now() + 420;
-  if (!motionAllowed()) {
-    doc.style.scrollBehavior = 'auto';
-    scrollTo(0, toY);
-    doc.style.scrollBehavior = '';
-    onScroll();
-    return;
-  }
-  const cap = document.querySelector('#capabilities');
-  const nav = navOffset();
-  const pinned = scrollY;
-  const travel = direction > 0 ? Math.max(1, innerHeight - nav) : Math.max(hero.getBoundingClientRect().height, innerHeight);
-  sceneCover = true;
-  doc.classList.add('is-scene');
-  doc.style.scrollBehavior = 'auto';
-  scrollTo(0, pinned);
-  if (direction > 0) {
-    sceneSpacer.style.height = `${cap.getBoundingClientRect().height}px`;
-    cap.before(sceneSpacer);
-    cap.classList.add('is-scene-next');
-    cap.style.top = `${nav}px`;
-    cap.style.transform = `translate3d(0,${travel}px,0)`;
-  } else {
-    const H = hero.getBoundingClientRect().height;
-    sceneSpacer.style.height = `${H}px`;
-    hero.before(sceneSpacer);
-    hero.classList.add('is-cover');
-    hero.style.height = `${H}px`;
-    hero.style.transform = `translate3d(0,${-travel}px,0)`;
-  }
-  scrollTo(0, pinned);
-  const start = performance.now();
-  const dur = 760;
-  sceneFrame = requestAnimationFrame(function tick(now){
-    const t = Math.min(1, (now - start) / dur);
-    const e = 1 - Math.pow(1 - t, 3);
-    const shift = travel * (1 - e);
-    if (Math.abs(scrollY - pinned) > 1) scrollTo(0, pinned);
-    if (direction > 0) cap.style.transform = `translate3d(0,${shift}px,0)`;
-    else hero.style.transform = `translate3d(0,${-shift}px,0)`;
-    if (t < 1) sceneFrame = requestAnimationFrame(tick);
-    else finishCover();
-  });
-  sceneLockUntil = start + dur + 420;
-}
-addEventListener('wheel', e => {
-  if (!sceneInput() || e.ctrlKey || e.metaKey) return;
-  const dy = wheelDelta(e);
-  if (!dy || Math.abs(e.deltaX) > Math.abs(dy)) return;
-  if (dialog?.open || nestedScroll(e.target, dy)) return;
-  if (performance.now() < sceneLockUntil || sceneFrame) { e.preventDefault(); return; }
-  if (!wheelGesture) wheelGesture = {hero:heroIsScene(), cap:atCapScene()};
-  clearTimeout(wheelIdle);
-  wheelIdle = setTimeout(() => { wheelGesture = null; wheelAccum = 0; }, 180);
-  if (wheelGesture.hero && heroIsScene() && dy > 0) {
-    e.preventDefault();
-    wheelAccum += dy;
-    if (wheelAccum >= 32) { wheelAccum = 0; startCover(1, capSceneY()); }
-  } else if (wheelGesture.cap && atCapScene() && dy < 0) {
-    e.preventDefault();
-    wheelAccum += dy;
-    if (wheelAccum <= -32) { wheelAccum = 0; startCover(-1, 0); }
-  } else wheelAccum = 0;
-}, {passive:false});
-document.addEventListener('click', e => {
-  if (!sceneFrame || !e.target.closest?.('a[href^="#"]')) return;
-  cancelAnimationFrame(sceneFrame);
-  cleanupCover();
-  sceneLockUntil = 0;
-});
-addEventListener('resize', () => { if (sceneFrame) finishCover(false); }, {passive:true});
+// Scroll remains native; scene state retained for existing shared handlers.
+let sceneFrame=0;
+function finishCover(){}
 
 const safeURL = value => { if (typeof value !== 'string' || !value.trim()) return null; try { const url = new URL(value, location.href); return ['http:','https:'].includes(url.protocol) ? url.href : null; } catch { return null; } };
 const element = (tag, text, className) => { const el = document.createElement(tag); if (text) el.textContent = text; if (className) el.className = className; return el; };
@@ -374,7 +379,9 @@ for (const p of data.projects.filter(p => p.published && p.name && p.role && p.r
 }
 
 const templates = data.templates.filter(t => t.status === 'complete' && t.title && safeURL(t.desktopPreview) && safeURL(t.mobilePreview) && safeURL(t.liveDemoUrl));
-if (templates.length) document.querySelector('#template-empty').hidden = true;
+const templateCollection = document.querySelector('#template-collection');
+const templateEmpty = document.querySelector('#template-empty');
+if (templates.length && templateEmpty) templateEmpty.hidden = true;
 for (const t of templates) {
   const article = element('article', null, 'template-item');
   article.append(element('p', t.category, 'tag'), element('h4', t.title), element('p', t.description));
@@ -390,38 +397,143 @@ for (const t of templates) {
   const link = element('a', '라이브 데모 보기', 'button light');
   link.href = safeURL(t.liveDemoUrl); link.target = '_blank'; link.rel = 'noopener noreferrer'; link.dataset.track = 'live_demo_click';
   controls.append(link); article.append(preview, controls);
-  document.querySelector('#template-collection').append(article);
+  templateCollection?.append(article);
 }
 
 // No account connected: dispatch events locally; no storage, network requests or PII.
 const tracking = window.seoahSettings?.analytics;
 function track(name, parameters = {}){ const detail = {event:name, ...parameters}; window.dispatchEvent(new CustomEvent('seoah:analytics', {detail})); if (tracking?.enabled) { window.dataLayer = window.dataLayer || []; window.dataLayer.push(detail); } }
 document.addEventListener('click', e => { const link = e.target.closest?.('[data-track]'); if (!link) return; link.dataset.track.split(' ').forEach(name => track(name, {placement:link.closest('section')?.id || 'navigation'})); });
-const emailLink = document.querySelector('.email');
-if (emailLink) {
-  let copyTimer = 0;
-  emailLink.addEventListener('click', async event => {
-    event.preventDefault();
-    const address = emailLink.textContent.trim();
-    try {
-      await navigator.clipboard.writeText(address);
-    } catch {
-      const field = document.createElement('textarea');
-      field.value = address;
-      field.setAttribute('readonly', '');
-      field.style.position = 'fixed';
-      field.style.left = '-999px';
-      document.body.append(field);
-      field.select();
-      document.execCommand('copy');
-      field.remove();
-    }
-    emailLink.dataset.copied = 'true';
-    emailLink.setAttribute('aria-label', '이메일 주소를 복사했습니다. ' + address);
-    clearTimeout(copyTimer);
-    copyTimer = setTimeout(() => { delete emailLink.dataset.copied; emailLink.removeAttribute('aria-label'); }, 1600);
-  });
-}
 const seenProjects = new Set();
 const projectObserver = new IntersectionObserver(entries => entries.forEach(entry => { if (entry.isIntersecting && !seenProjects.has(entry.target)) { seenProjects.add(entry.target); track('project_view', {project:entry.target.dataset.project}); projectObserver.unobserve(entry.target); } }), {threshold:.25});
 document.querySelectorAll('[data-project]').forEach(el => projectObserver.observe(el));
+
+
+// Interactive production demo; labels and explanatory copy remain in the DOM.
+const modes={plan:{accent:'#f48b29',title:'흩어진 요구사항을, 제작할 수 있는 구조로.',copy:'요구사항 분석 · IA · User Flow · UX 정책 · 화면설계<br>정리되지 않은 아이디어부터 기존 기획 자료의 보완까지 협의합니다.',aside:'구조부터<br>정리하다.',desc:'같은 사이트의 목적·콘텐츠를<br>흐름과 화면 구조로 정리합니다.',checks:'Requirements<br>IA / User flow<br>Screen structure',tag:'01 / UX PLANNING',note:'같은 콘텐츠의 화면 구조를 먼저 정리한 상태'},design:{accent:'#ff623c',title:'사용자 흐름과 브랜드를, 하나의 UI로.',copy:'웹 UI · 반응형 UI · 컴포넌트 · 디자인 시스템<br>기획 자료가 있는 프로젝트도 디자인 구간부터 협의할 수 있습니다.',aside:'구조에<br>브랜드를 더하다.',desc:'같은 콘텐츠와 흐름에<br>타이포·컬러·컴포넌트를 적용합니다.',checks:'Typography<br>Color system<br>Component',tag:'02 / UI DESIGN',note:'같은 화면에 디자인 시스템이 적용된 상태'},web:{accent:'#8760ee',title:'',copy:'',aside:'화면을<br>동작으로 연결하다.',desc:'Desktop / Mobile 버튼을 눌러<br>같은 콘텐츠의 재배치를 확인하세요.',checks:'Responsive layout<br>Interaction / QA<br>Deployment',tag:'03 / WEB PRODUCTION',note:'구현을 설명하는 데모입니다. 위에서 Desktop / Mobile을 전환해보세요.'}};
+const productionTabs=[...document.querySelectorAll('[data-mode]')];let current='design';
+function writePhaseNote(){
+  const mobile = document.querySelector('#product-shell').classList.contains('mobile');
+  const note = modes[current].note + (mobile ? ' 지금은 같은 콘텐츠의 Mobile 배치입니다.' : '');
+  document.querySelector('#phase-note').textContent = note;
+}
+function select(mode){
+  current = mode;
+  const m = modes[mode];
+  document.querySelector('.hero').style.setProperty('--accent', m.accent);
+  document.querySelector('.lab').dataset.phase = mode;
+  productionTabs.forEach(t => {
+    const on = t.dataset.mode === mode;
+    t.setAttribute('aria-selected', on);
+    t.tabIndex = on ? 0 : -1;
+  });
+  const detail = document.querySelector('#scope-detail');
+  detail.hidden = !m.title && !m.copy;
+  document.querySelector('#detail-title').textContent = m.title;
+  document.querySelector('#detail-copy').innerHTML = m.copy;
+  document.querySelector('#production-demo').setAttribute('aria-labelledby', 'tab-' + mode);
+  document.querySelector('#aside-title').innerHTML = m.aside;
+  document.querySelector('#aside-copy').innerHTML = m.desc;
+  document.querySelector('#lab-checks').innerHTML = m.checks;
+  document.querySelector('#aside-kicker').textContent = m.tag;
+  document.querySelector('#stage-tag').textContent = m.tag;
+  writePhaseNote();
+}
+productionTabs.forEach((t,i)=>{t.addEventListener('click',()=>select(t.dataset.mode));t.addEventListener('keydown',e=>{let n=i;if(e.key==='ArrowRight')n=(i+1)%3;else if(e.key==='ArrowLeft')n=(i+2)%3;else if(e.key==='Home')n=0;else if(e.key==='End')n=2;else return;e.preventDefault();select(productionTabs[n].dataset.mode);productionTabs[n].focus()})});document.querySelector('#prev').onclick=()=>select(productionTabs[(productionTabs.findIndex(t=>t.dataset.mode===current)+2)%3].dataset.mode);document.querySelector('#next').onclick=()=>select(productionTabs[(productionTabs.findIndex(t=>t.dataset.mode===current)+1)%3].dataset.mode);
+const devices=[...document.querySelectorAll('[data-device]')];
+devices.forEach(b => b.addEventListener('click', () => {
+  devices.forEach(d => d.setAttribute('aria-pressed', d === b));
+  document.querySelector('#product-shell').classList.toggle('mobile', b.dataset.device === 'mobile');
+  writePhaseNote();
+}));
+
+document.querySelector('.demo-button').addEventListener('click',e=>{const button=e.currentTarget;const panel=document.querySelector('#demo-more');panel.hidden=!panel.hidden;button.setAttribute('aria-expanded',String(!panel.hidden));button.textContent=panel.hidden?'Explore ↓':'Close ↑'});
+const demo = document.querySelector('#production-demo');
+if (demo && matchMedia('(hover: hover) and (pointer: fine)').matches) {
+  const pointer = document.createElement('div');
+  pointer.className = 'hero-pointer';
+  pointer.hidden = true;
+  pointer.setAttribute('aria-hidden', 'true');
+  document.body.append(pointer);
+  demo.classList.add('has-pointer');
+  demo.addEventListener('pointermove', event => {
+    if (event.pointerType !== 'mouse') return;
+    pointer.hidden = false;
+    pointer.style.transform = `translate(${event.clientX}px, ${event.clientY}px)`;
+  });
+  demo.addEventListener('pointerleave', () => { pointer.hidden = true; });
+}
+const collaboration=document.querySelector('.collaboration-choice');collaboration.hidden=false;
+const collabTabs=[...document.querySelectorAll('[data-collab]')];
+const collabData={full:{areas:['brief','ux','ui','web','qa']},partial:{areas:['ui','web']},white:{areas:['ux','ui','web','qa']},long:{areas:['brief','ux','ui','web','qa']}};
+collabData.full.text='요구사항에서 공개까지, 전체 제작 범위를 프로젝트에 맞춰 협의합니다.';
+collabData.partial.text='기존 기획·디자인 자료를 확인하고 팀에 필요한 업무 구간을 정합니다. 강조된 구간은 예시이며, 실제 참여 범위는 협의합니다.';
+collabData.white.text='대행사가 최종 고객과 소통하고, 이서아가 합의한 제작 범위를 담당합니다. 커뮤니케이션·공개 범위와 NDA는 사전에 협의합니다.';
+collabData.long.text='반복되는 제작 수요와 프로젝트 상황에 맞춰 업무 범위·빈도·검토 방식을 협의합니다.';
+function setCollab(tab){const data=collabData[tab.dataset.collab];collabTabs.forEach(t=>{t.setAttribute('aria-selected',String(t===tab));t.tabIndex=t===tab?0:-1});document.querySelector('#collab-panel').setAttribute('aria-labelledby',tab.id);document.querySelector('#collab-description').textContent=data.text;document.querySelectorAll('[data-area]').forEach(li=>li.classList.toggle('selected',data.areas.includes(li.dataset.area)))}
+collabTabs.forEach((t,i)=>{t.addEventListener('click',()=>setCollab(t));t.addEventListener('keydown',e=>{let n;if(e.key==='ArrowRight')n=(i+1)%collabTabs.length;else if(e.key==='ArrowLeft')n=(i+collabTabs.length-1)%collabTabs.length;else if(e.key==='Home')n=0;else if(e.key==='End')n=collabTabs.length-1;else return;e.preventDefault();setCollab(collabTabs[n]);collabTabs[n].focus()})});setCollab(collabTabs[0]);
+document.querySelector('.inquiry-options').hidden=false;
+const inquiryRadios=[...document.querySelectorAll('input[name=inquiry-situation]')];
+const inquiryHints=['목표·대상·필수 콘텐츠와 희망 일정을 알려주세요.','기획서·디자인 자료와 진행 상태, 남은 업무를 알려주세요.','반복되는 업무와 빈도, 고객 커뮤니케이션 방식과 희망 일정을 알려주세요.'];
+function setInquiry(){const i=inquiryRadios.findIndex(r=>r.checked);document.querySelector('#inquiry-help').textContent=inquiryHints[i];const body='협업 상황: '+inquiryRadios[i].value+'\n\n프로젝트 개요: \n필요한 업무: \n준비된 자료: \n희망 일정: \n';document.querySelector('.contact-action .button').href='mailto:seoah.lab@gmail.com?subject='+encodeURIComponent('B2B 웹 제작 문의 / '+inquiryRadios[i].value)+'&body='+encodeURIComponent(body)}
+inquiryRadios.forEach(r=>r.addEventListener('change',setInquiry));setInquiry();
+const layerWatch=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('layer-in');layerWatch.unobserve(entry.target)}}),{threshold:.6});document.querySelectorAll('.layers li').forEach(el=>layerWatch.observe(el));
+
+const wordTrack=document.querySelector('#word-track');
+const wordCurrent=document.querySelector('.word-current');
+const wideStrip=matchMedia('(min-width:901px)');
+if(wordTrack&&wordCurrent){
+  const wordCount=wordTrack.children.length-1;
+  let wordIndex=0;
+  let wordTimer=0;
+  const wordRow=()=>wordTrack.firstElementChild.getBoundingClientRect().height||0;
+  function placeWord(index,animate){
+    const y=-(index*wordRow());
+    if(!animate||!motionAllowed()){
+      wordTrack.style.transition='none';
+      wordTrack.style.transform=`translate3d(0,${y}px,0)`;
+      void wordTrack.offsetWidth;
+      wordTrack.style.transition='';
+    }else wordTrack.style.transform=`translate3d(0,${y}px,0)`;
+  }
+  function showWord(index){
+    const n=index%wordCount;
+    wordCurrent.textContent=wordTrack.children[n].textContent;
+    if(!wideStrip.matches)return;
+    const tab=productionTabs.find(item=>item.dataset.mode===['design','web','plan','design','web'][n]);
+    if(tab&&tab.dataset.mode!==current)select(tab.dataset.mode);
+  }
+  function advanceWord(){
+    if(!motionAllowed()){
+      wordIndex=(wordIndex+1)%wordCount;
+      placeWord(wordIndex,false);
+      showWord(wordIndex);
+      return;
+    }
+    if(wordIndex>=wordCount){wordIndex=0;placeWord(0,false)}
+    wordIndex+=1;
+    placeWord(wordIndex,true);
+    showWord(wordIndex);
+    if(wordIndex!==wordCount)return;
+    const reset=event=>{
+      if(event.propertyName!=='transform')return;
+      wordTrack.removeEventListener('transitionend',reset);
+      wordIndex=0;
+      placeWord(0,false);
+    };
+    wordTrack.addEventListener('transitionend',reset);
+  }
+  function runWords(){
+    clearInterval(wordTimer);
+    if(document.hidden||wordRow()===0)return;
+    wordTimer=setInterval(advanceWord,2400);
+  }
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)clearInterval(wordTimer);else runWords()});
+  addEventListener('resize',()=>{if(wordIndex===wordCount)wordIndex=0;placeWord(wordIndex,false)},{passive:true});
+  wideStrip.addEventListener('change',()=>showWord(wordIndex%wordCount));
+  reduced.addEventListener('change',()=>{if(wordIndex===wordCount)wordIndex=0;placeWord(wordIndex,false)});
+  document.fonts?.ready.then(()=>placeWord(wordIndex,false));
+  showWord(0);
+  if(document.documentElement.classList.contains('hero-intro')) document.addEventListener('hero-title-ready',runWords,{once:true});
+  else runWords();
+}
