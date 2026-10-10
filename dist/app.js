@@ -123,6 +123,79 @@ const sectionWatch = new IntersectionObserver(entries => {
 }, {threshold:[0,.2,.35,.5,.75]});
 document.querySelectorAll('.hero, .section').forEach(section => { primeSequence(section); sectionWatch.observe(section); });
 
+// First view: dust gathers into each English letter at the viewport center, then the line settles and the hero follows.
+async function playHeroIntro(){
+  const root = document.documentElement;
+  const brand = document.querySelector('.hero-brand');
+  if (!root.classList.contains('hero-intro') || !motionAllowed() || !brand) {
+    root.classList.remove('hero-intro');
+    document.dispatchEvent(new Event('hero-title-ready'));
+    return;
+  }
+  if (document.fonts?.ready) await document.fonts.ready;
+  const letters = [...document.querySelectorAll('.hero-letter')];
+  letters.forEach(letter => {
+    const glyph = document.createElement('span');
+    glyph.className = 'hero-glyph';
+    glyph.textContent = letter.textContent;
+    letter.textContent = '';
+    letter.append(glyph);
+    for (let i = 0; i < 8; i++) {
+      const dust = document.createElement('i');
+      dust.className = 'hero-dust';
+      dust.setAttribute('aria-hidden', 'true');
+      const spread = 16 + Math.random() * 42;
+      const angle = Math.random() * Math.PI * 2;
+      dust.style.setProperty('--x', `${(Math.cos(angle) * spread).toFixed(1)}px`);
+      dust.style.setProperty('--y', `${(Math.sin(angle) * spread).toFixed(1)}px`);
+      dust.style.setProperty('--r', `${Math.floor(Math.random() * 360)}deg`);
+      letter.append(dust);
+    }
+  });
+  const centerX = innerWidth / 2;
+  const centerY = innerHeight / 2;
+  root.classList.add('hero-prep');
+  letters.forEach(letter => {
+    const box = letter.getBoundingClientRect();
+    letter.style.setProperty('--tx', `${(centerX - (box.left + box.width / 2)).toFixed(1)}px`);
+    letter.style.setProperty('--ty', `${(centerY - (box.top + box.height / 2)).toFixed(1)}px`);
+    letter.style.setProperty('--spin', `${(Math.random() * 70 - 35).toFixed(1)}deg`);
+  });
+  void brand.offsetWidth;
+  root.classList.remove('hero-prep');
+  const step = 120;
+  const dustLead = 260;
+  letters.forEach((letter, index) => {
+    setTimeout(() => letter.classList.add('is-dust'), index * step);
+    setTimeout(() => letter.classList.add('is-on'), index * step + dustLead);
+  });
+  const opened = (letters.length - 1) * step + dustLead + 760;
+  const mark = (name, at) => setTimeout(() => root.classList.add(name), opened + at);
+  setTimeout(() => root.classList.add('hero-fade', 'hero-title-in'), opened);
+  setTimeout(() => {
+    root.classList.add('hero-prep', 'hero-settle');
+    root.classList.remove('hero-fade');
+    letters.forEach(letter => letter.classList.add('is-seat'));
+    void brand.offsetWidth;
+    root.classList.remove('hero-prep');
+    letters.forEach((letter, index) => setTimeout(() => letter.classList.add('is-seated'), index * 46));
+  }, opened + 900);
+  setTimeout(() => document.dispatchEvent(new Event('hero-title-ready')), opened);
+  mark('hero-line-in', 320);
+  mark('hero-lead-in', 680);
+  mark('hero-action-in', 680);
+  mark('hero-tabs-in', 1020);
+  mark('hero-lab-in', 1020);
+  setTimeout(() => {
+    root.classList.remove('hero-intro', 'hero-settle', 'hero-prep', 'hero-fade', 'hero-title-in', 'hero-line-in', 'hero-lead-in', 'hero-action-in', 'hero-tabs-in', 'hero-lab-in');
+    letters.forEach(letter => {
+      letter.classList.remove('is-seat', 'is-seated');
+      letter.querySelectorAll('.hero-dust').forEach(dust => dust.remove());
+    });
+  }, opened + 3900);
+}
+playHeroIntro();
+
 // The work frame draws once as the screenshot enters. The picture stays visible the whole time.
 const stage = document.querySelector('.preview-stage');
 if (stage) {
@@ -185,6 +258,7 @@ function selectTab(tab, animateMark = true){
   } else panel?.classList.add('draw');
   placeDeliveryMark(animateMark);
 }
+if (tabs.length) {
 syncDeliveryMotion();
 selectTab(tabs[0], false);
 addEventListener('resize', () => placeDeliveryMark(false), {passive:true});
@@ -201,6 +275,7 @@ tabs.forEach((tab, i) => {
     e.preventDefault(); selectTab(tabs[n]); tabs[n].focus();
   });
 });
+}
 
 const dialog = document.querySelector('#preview-dialog');
 if (dialog && typeof dialog.showModal === 'function') {
@@ -256,7 +331,9 @@ for (const p of data.projects.filter(p => p.published && p.name && p.role && p.r
 }
 
 const templates = data.templates.filter(t => t.status === 'complete' && t.title && safeURL(t.desktopPreview) && safeURL(t.mobilePreview) && safeURL(t.liveDemoUrl));
-if (templates.length) document.querySelector('#template-empty').hidden = true;
+const templateCollection = document.querySelector('#template-collection');
+const templateEmpty = document.querySelector('#template-empty');
+if (templates.length && templateEmpty) templateEmpty.hidden = true;
 for (const t of templates) {
   const article = element('article', null, 'template-item');
   article.append(element('p', t.category, 'tag'), element('h4', t.title), element('p', t.description));
@@ -272,7 +349,7 @@ for (const t of templates) {
   const link = element('a', '라이브 데모 보기', 'button light');
   link.href = safeURL(t.liveDemoUrl); link.target = '_blank'; link.rel = 'noopener noreferrer'; link.dataset.track = 'live_demo_click';
   controls.append(link); article.append(preview, controls);
-  document.querySelector('#template-collection').append(article);
+  templateCollection?.append(article);
 }
 
 // No account connected: dispatch events locally; no storage, network requests or PII.
@@ -285,7 +362,7 @@ document.querySelectorAll('[data-project]').forEach(el => projectObserver.observ
 
 
 // Interactive production demo; labels and explanatory copy remain in the DOM.
-const modes={plan:{accent:'#f48b29',title:'흩어진 요구사항을, 제작할 수 있는 구조로.',copy:'요구사항 분석 · IA · User Flow · UX 정책 · 화면설계<br>정리되지 않은 아이디어부터 기존 기획 자료의 보완까지 협의합니다.',aside:'구조부터<br>정리하다.',desc:'같은 사이트의 목적·콘텐츠를<br>흐름과 화면 구조로 정리합니다.',checks:'Requirements<br>IA / User flow<br>Screen structure',tag:'01 / UX PLANNING',note:'같은 콘텐츠의 화면 구조를 먼저 정리한 상태'},design:{accent:'#ff623c',title:'사용자 흐름과 브랜드를, 하나의 UI로.',copy:'웹 UI · 반응형 UI · 컴포넌트 · 디자인 시스템<br>기획 자료가 있는 프로젝트도 디자인 구간부터 협의할 수 있습니다.',aside:'구조에<br>브랜드를 더하다.',desc:'같은 콘텐츠와 흐름에<br>타이포·컬러·컴포넌트를 적용합니다.',checks:'Typography<br>Color system<br>Component',tag:'02 / UI DESIGN',note:'같은 화면에 디자인 시스템이 적용된 상태'},web:{accent:'#8760ee',title:'설계한 경험을, 실제 웹 화면과 동작까지.',copy:'반응형 웹 구현 · 인터랙션 · 주요 동작 QA · 배포<br>회원·데이터 등 별도 개발이 필요한 기능은 먼저 범위를 검토합니다.',aside:'화면을<br>동작으로 연결하다.',desc:'Desktop / Mobile 버튼을 눌러<br>같은 콘텐츠의 재배치를 확인하세요.',checks:'Responsive layout<br>Interaction / QA<br>Deployment',tag:'03 / WEB PRODUCTION',note:'구현을 설명하는 데모입니다. 위에서 Desktop / Mobile을 전환해보세요.'}};
+const modes={plan:{accent:'#f48b29',title:'흩어진 요구사항을, 제작할 수 있는 구조로.',copy:'요구사항 분석 · IA · User Flow · UX 정책 · 화면설계<br>정리되지 않은 아이디어부터 기존 기획 자료의 보완까지 협의합니다.',aside:'구조부터<br>정리하다.',desc:'같은 사이트의 목적·콘텐츠를<br>흐름과 화면 구조로 정리합니다.',checks:'Requirements<br>IA / User flow<br>Screen structure',tag:'01 / UX PLANNING',note:'같은 콘텐츠의 화면 구조를 먼저 정리한 상태'},design:{accent:'#ff623c',title:'사용자 흐름과 브랜드를, 하나의 UI로.',copy:'웹 UI · 반응형 UI · 컴포넌트 · 디자인 시스템<br>기획 자료가 있는 프로젝트도 디자인 구간부터 협의할 수 있습니다.',aside:'구조에<br>브랜드를 더하다.',desc:'같은 콘텐츠와 흐름에<br>타이포·컬러·컴포넌트를 적용합니다.',checks:'Typography<br>Color system<br>Component',tag:'02 / UI DESIGN',note:'같은 화면에 디자인 시스템이 적용된 상태'},web:{accent:'#8760ee',title:'',copy:'',aside:'화면을<br>동작으로 연결하다.',desc:'Desktop / Mobile 버튼을 눌러<br>같은 콘텐츠의 재배치를 확인하세요.',checks:'Responsive layout<br>Interaction / QA<br>Deployment',tag:'03 / WEB PRODUCTION',note:'구현을 설명하는 데모입니다. 위에서 Desktop / Mobile을 전환해보세요.'}};
 const productionTabs=[...document.querySelectorAll('[data-mode]')];let current='design';
 function writePhaseNote(){
   const mobile = document.querySelector('#product-shell').classList.contains('mobile');
@@ -302,6 +379,8 @@ function select(mode){
     t.setAttribute('aria-selected', on);
     t.tabIndex = on ? 0 : -1;
   });
+  const detail = document.querySelector('#scope-detail');
+  detail.hidden = !m.title && !m.copy;
   document.querySelector('#detail-title').textContent = m.title;
   document.querySelector('#detail-copy').innerHTML = m.copy;
   document.querySelector('#production-demo').setAttribute('aria-labelledby', 'tab-' + mode);
@@ -321,6 +400,21 @@ devices.forEach(b => b.addEventListener('click', () => {
 }));
 
 document.querySelector('.demo-button').addEventListener('click',e=>{const button=e.currentTarget;const panel=document.querySelector('#demo-more');panel.hidden=!panel.hidden;button.setAttribute('aria-expanded',String(!panel.hidden));button.textContent=panel.hidden?'Explore ↓':'Close ↑'});
+const demo = document.querySelector('#production-demo');
+if (demo && matchMedia('(hover: hover) and (pointer: fine)').matches) {
+  const pointer = document.createElement('div');
+  pointer.className = 'hero-pointer';
+  pointer.hidden = true;
+  pointer.setAttribute('aria-hidden', 'true');
+  document.body.append(pointer);
+  demo.classList.add('has-pointer');
+  demo.addEventListener('pointermove', event => {
+    if (event.pointerType !== 'mouse') return;
+    pointer.hidden = false;
+    pointer.style.transform = `translate(${event.clientX}px, ${event.clientY}px)`;
+  });
+  demo.addEventListener('pointerleave', () => { pointer.hidden = true; });
+}
 const collaboration=document.querySelector('.collaboration-choice');collaboration.hidden=false;
 const collabTabs=[...document.querySelectorAll('[data-collab]')];
 const collabData={full:{areas:['brief','ux','ui','web','qa']},partial:{areas:['ui','web']},white:{areas:['ux','ui','web','qa']},long:{areas:['brief','ux','ui','web','qa']}};
@@ -336,3 +430,62 @@ const inquiryHints=['목표·대상·필수 콘텐츠와 희망 일정을 알려
 function setInquiry(){const i=inquiryRadios.findIndex(r=>r.checked);document.querySelector('#inquiry-help').textContent=inquiryHints[i];const body='협업 상황: '+inquiryRadios[i].value+'\n\n프로젝트 개요: \n필요한 업무: \n준비된 자료: \n희망 일정: \n';document.querySelector('.contact-action .button').href='mailto:seoah.lab@gmail.com?subject='+encodeURIComponent('B2B 웹 제작 문의 / '+inquiryRadios[i].value)+'&body='+encodeURIComponent(body)}
 inquiryRadios.forEach(r=>r.addEventListener('change',setInquiry));setInquiry();
 const layerWatch=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('layer-in');layerWatch.unobserve(entry.target)}}),{threshold:.6});document.querySelectorAll('.layers li').forEach(el=>layerWatch.observe(el));
+
+const wordTrack=document.querySelector('#word-track');
+const wordCurrent=document.querySelector('.word-current');
+const wideStrip=matchMedia('(min-width:901px)');
+if(wordTrack&&wordCurrent){
+  const wordCount=wordTrack.children.length-1;
+  let wordIndex=0;
+  let wordTimer=0;
+  const wordRow=()=>wordTrack.firstElementChild.getBoundingClientRect().height||0;
+  function placeWord(index,animate){
+    const y=-(index*wordRow());
+    if(!animate||!motionAllowed()){
+      wordTrack.style.transition='none';
+      wordTrack.style.transform=`translate3d(0,${y}px,0)`;
+      void wordTrack.offsetWidth;
+      wordTrack.style.transition='';
+    }else wordTrack.style.transform=`translate3d(0,${y}px,0)`;
+  }
+  function showWord(index){
+    const n=index%wordCount;
+    wordCurrent.textContent=wordTrack.children[n].textContent;
+    if(!wideStrip.matches)return;
+    const tab=productionTabs.find(item=>item.dataset.mode===['design','web','plan','design','web'][n]);
+    if(tab&&tab.dataset.mode!==current)select(tab.dataset.mode);
+  }
+  function advanceWord(){
+    if(!motionAllowed()){
+      wordIndex=(wordIndex+1)%wordCount;
+      placeWord(wordIndex,false);
+      showWord(wordIndex);
+      return;
+    }
+    if(wordIndex>=wordCount){wordIndex=0;placeWord(0,false)}
+    wordIndex+=1;
+    placeWord(wordIndex,true);
+    showWord(wordIndex);
+    if(wordIndex!==wordCount)return;
+    const reset=event=>{
+      if(event.propertyName!=='transform')return;
+      wordTrack.removeEventListener('transitionend',reset);
+      wordIndex=0;
+      placeWord(0,false);
+    };
+    wordTrack.addEventListener('transitionend',reset);
+  }
+  function runWords(){
+    clearInterval(wordTimer);
+    if(document.hidden||wordRow()===0)return;
+    wordTimer=setInterval(advanceWord,2400);
+  }
+  document.addEventListener('visibilitychange',()=>{if(document.hidden)clearInterval(wordTimer);else runWords()});
+  addEventListener('resize',()=>{if(wordIndex===wordCount)wordIndex=0;placeWord(wordIndex,false)},{passive:true});
+  wideStrip.addEventListener('change',()=>showWord(wordIndex%wordCount));
+  reduced.addEventListener('change',()=>{if(wordIndex===wordCount)wordIndex=0;placeWord(wordIndex,false)});
+  document.fonts?.ready.then(()=>placeWord(wordIndex,false));
+  showWord(0);
+  if(document.documentElement.classList.contains('hero-intro')) document.addEventListener('hero-title-ready',runWords,{once:true});
+  else runWords();
+}
