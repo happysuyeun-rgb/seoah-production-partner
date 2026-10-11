@@ -19,7 +19,8 @@ html=html.replace(/<!-- SEO START -->[\s\S]*?<!-- SEO END -->/,'').replace(/<tit
 html=html.replace('</head>',`<!-- SEO START -->\n${meta.join('\n')}\n<!-- SEO END -->\n</head>`);
 await writeFile(resolve(root,'dist/index.html'),html);
 await writeFile(resolve(root,'dist/robots.txt'),`User-agent: *\n${config.indexingEnabled?'Allow: /':'Disallow: /'}\n\nSitemap: ${origin.origin}/sitemap.xml\n`);
-await writeFile(resolve(root,'dist/sitemap.xml'),`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>${escape(url)}</loc></url></urlset>\n`);
+if(!/^\d{4}-\d{2}-\d{2}$/.test(config.lastModified))throw new Error('lastModified must use YYYY-MM-DD');
+await writeFile(resolve(root,'dist/sitemap.xml'),`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"><url><loc>${escape(url)}</loc><lastmod>${config.lastModified}</lastmod></url></urlset>\n`);
 await writeFile(resolve(root,'dist/site-settings.js'),`window.seoahSettings = ${JSON.stringify({analytics:config.analytics})};\n`);
 await writeFile(resolve(root,'dist/404.html'),`<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex, follow"><title>페이지를 찾을 수 없습니다 | SEOAH</title><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/style.css"></head><body><main class="error-page"><span class="mini">SEOAH / 404</span><h1>LET’S GET<br>BACK ON TRACK.</h1><p>요청한 페이지를 찾을 수 없습니다.<br>주소를 확인하거나 첫 화면으로 돌아가 주세요.</p><a class="button light" href="/">첫 화면으로 돌아가기</a><a class="text-link" href="mailto:seoah.lab@gmail.com">이메일 문의</a></main></body></html>`);
 console.log('Production static build PASS: metadata, canonical, robots, sitemap, schema, settings, 404');
