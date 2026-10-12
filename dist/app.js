@@ -151,38 +151,39 @@ function primeSequence(section){
   const lead = section.querySelector('.section-lead, .contact-lead');
   add(title, 0, 'seq-down');
   add(label, 0.12, 'seq-kicker');
-  add(lead, 0.34);
+  add(lead, 0.34, 'seq-rise');
   const copy = [...section.querySelectorAll('.steps > li, .case-body, .pending-work, .contact-action')];
   const visuals = [...section.querySelectorAll('.assembly, .case-preview, .stage-card, .contact-panel')];
   let cursor = 0.56;
-  copy.forEach(el => { add(el, cursor); cursor += 0.07; });
-  let picture = cursor + 0.1;
-  visuals.forEach(el => { add(el, picture); picture += 0.12; });
+  copy.forEach(el => { add(el, cursor, 'seq-rise'); cursor += 0.07; });
+  let picture = cursor + 0.12;
+  visuals.forEach(el => { add(el, picture, 'seq-rise'); picture += 0.12; });
 }
+const titleOf = section => section.querySelector('h2') || section;
 const showSection = section => section.classList.add('is-in');
-const headingReady = section => {
-  const title = section.querySelector('h2') || section;
-  return title.getBoundingClientRect().top < innerHeight * 0.5;
-};
-let revealQueued = false;
-function revealReadySections(){
+function headingPassed(section){
+  return titleOf(section).getBoundingClientRect().bottom < 48;
+}
+function headingInView(section){
+  const box = titleOf(section).getBoundingClientRect();
+  return box.top < innerHeight * 0.96 && box.bottom > 48;
+}
+function revealSections(){
   document.querySelectorAll('.section:not(.is-in)').forEach(section => {
-    const box = section.getBoundingClientRect();
-    if (box.bottom < innerHeight * 0.2) showSection(section);
-    else if (box.top < innerHeight && headingReady(section)) {
-      requestAnimationFrame(() => requestAnimationFrame(() => showSection(section)));
-    }
+    if (headingInView(section)) showSection(section);
+    else if (headingPassed(section)) section.classList.add('is-in', 'seq-instant');
   });
 }
+let revealTimer = 0;
 function queueReveal(){
-  if (revealQueued) return;
-  revealQueued = true;
-  requestAnimationFrame(() => { revealQueued = false; revealReadySections(); });
+  revealSections();
+  clearTimeout(revealTimer);
+  revealTimer = setTimeout(revealSections, 60);
 }
 addEventListener('scroll', queueReveal, {passive:true});
 addEventListener('resize', queueReveal, {passive:true});
 document.querySelectorAll('.section').forEach(primeSequence);
-queueReveal();
+revealSections();
 
 // First view: dust gathers into each English letter at the viewport center, then the line settles and the hero follows.
 async function playHeroIntro(){
@@ -478,9 +479,42 @@ if (demo && matchMedia('(hover: hover) and (pointer: fine)').matches) {
 }
 document.querySelector('.inquiry-options').hidden=false;
 const inquiryRadios=[...document.querySelectorAll('input[name=inquiry-situation]')];
-const inquiryHints=['목표·대상·필수 콘텐츠와 희망 일정을 알려주세요.','기획서·디자인 자료와 진행 상태, 남은 업무를 알려주세요.','반복되는 업무와 빈도, 고객 커뮤니케이션 방식과 희망 일정을 알려주세요.'];
+const inquiryHints=['목표·대상·필수 콘텐츠와 희망 일정을 알려주세요. 범위가 아직 정리되지 않아도 괜찮습니다.','기획서·디자인 자료와 진행 상태, 남은 업무를 알려주세요.','반복되는 업무와 빈도, 고객 커뮤니케이션 방식과 희망 일정을 알려주세요.'];
 function setInquiry(){const i=inquiryRadios.findIndex(r=>r.checked);document.querySelector('#inquiry-help').textContent=inquiryHints[i];const body='협업 상황: '+inquiryRadios[i].value+'\n\n프로젝트 개요: \n필요한 업무: \n준비된 자료: \n희망 일정: \n';document.querySelector('.contact-action .button').href='mailto:seoah.lab@gmail.com?subject='+encodeURIComponent('B2B 웹 제작 문의 / '+inquiryRadios[i].value)+'&body='+encodeURIComponent(body)}
 inquiryRadios.forEach(r=>r.addEventListener('change',setInquiry));setInquiry();
+const contactEmail=document.querySelector('#contact-panel .email');
+if(contactEmail){
+  let copiedTimer=0;
+  contactEmail.addEventListener('click',async event=>{
+    event.preventDefault();
+    const address='seoah.lab@gmail.com';
+    let copied=false;
+    try{
+      await navigator.clipboard.writeText(address);
+      copied=true;
+    }catch{
+      try{
+        const field=document.createElement('textarea');
+        field.value=address;
+        field.setAttribute('readonly','');
+        field.style.position='fixed';
+        field.style.opacity='0';
+        document.body.append(field);
+        field.select();
+        copied=document.execCommand('copy');
+        field.remove();
+      }catch{ copied=false; }
+    }
+    if(!copied){ location.href=contactEmail.href; return; }
+    contactEmail.dataset.copied='true';
+    contactEmail.setAttribute('aria-label','seoah.lab@gmail.com, 복사됨');
+    clearTimeout(copiedTimer);
+    copiedTimer=setTimeout(()=>{
+      delete contactEmail.dataset.copied;
+      contactEmail.removeAttribute('aria-label');
+    },1600);
+  });
+}
 const layerWatch=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('layer-in');layerWatch.unobserve(entry.target)}}),{threshold:.6});document.querySelectorAll('.layers li').forEach(el=>layerWatch.observe(el));
 
 const wordTrack=document.querySelector('#word-track');
