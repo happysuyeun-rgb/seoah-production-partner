@@ -1,8 +1,8 @@
 {
   "siteUrl": "https://seoah-production-partner.vercel.app",
   "siteName": "SEOAH — Web Production Partner",
-  "title": "이서아 | B2B 웹 제작 파트너 · 웹에이전시 외주",
-  "description": "웹에이전시와 기업을 위한 B2B 웹 제작 파트너 이서아. 약 9년의 UX 기획·UI/UX 디자인 경험을 바탕으로 반응형 홈페이지, 랜딩페이지 제작부터 QA·배포까지 연결합니다. 부분 외주·White-label·장기 제작 파트너십을 협의합니다.",
+  "title": "웹에이전시 외주 파트너 | 웹사이트 제작·UX/UI 디자인 — 이서아",
+  "description": "웹에이전시와 기업을 위한 웹사이트 제작 외주 파트너 이서아. UX 기획·UI/UX 디자인부터 반응형 홈페이지·랜딩페이지 제작, QA·배포까지 프로젝트별 필요한 업무를 협업합니다. 부분 외주·White-label 협업 가능.",
   "indexingEnabled": true,
   "ogImage": "/og-cover.jpg",
   "ogImageWidth": 1200,
@@ -17,14 +17,16 @@
     "measurementId": ""
   },
   "seoKeywords": [
-    "이서아",
-    "B2B 웹 제작 파트너",
     "웹에이전시 외주",
-    "UX 기획 외주",
+    "웹에이전시 외주 파트너",
+    "웹사이트 제작 외주",
+    "홈페이지 제작 외주",
+    "UX/UI 디자인 외주",
     "UI/UX 디자인 외주",
-    "반응형 홈페이지 제작",
-    "기업 랜딩페이지 제작",
-    "화이트라벨 웹 제작",
-    "장기 웹 제작 파트너"
-  ]
+    "랜딩페이지 제작 외주",
+    "반응형 웹 제작 외주",
+    "B2B 웹 제작 파트너",
+    "이서아"
+  ],
+  "lastModified": "2026-10-12"
 }
