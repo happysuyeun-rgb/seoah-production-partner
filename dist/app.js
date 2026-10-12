@@ -134,42 +134,56 @@ if (navToggle && navBar) {
   });
 }
 
-// Heading first, then the body copy in order, once the section fills the viewport.
-// Reduced motion and no-JS keep every line visible.
+// Each later section arrives as a heading, then the supporting line, then the pictures.
+// Reduced motion and no-JS keep every line visible. The hero keeps its own introduction.
 doc.classList.add('motion-ready');
 function primeSequence(section){
-  const title = section.querySelector('h1, h2');
-  const nodes = [];
-  const push = el => { if (el && !nodes.includes(el)) nodes.push(el); };
-  if (section.classList.contains('hero')) {
-    const eyebrow = section.querySelector('.hero-eyebrow');
-    if (eyebrow) { eyebrow.classList.add('seq'); eyebrow.style.setProperty('--d', '0s'); }
-    ['.hero-lead','.hero-trust','.hero-actions','.hero-lens'].forEach(sel => push(section.querySelector(sel)));
-  } else {
-    push(section.querySelector('.section-lead, .contact-lead'));
-    push(section.querySelector('.section-head .status'));
-    section.querySelectorAll('.cap-list > .cap, .cap-note, .steps > li, .assembly, .case-preview, .case-body > h3, .case-info > div, .pending-work, .partner-who, .forms, .whitelabel, .timeline, .delivery-switch, .delivery-panels, .layers > li, .ways > article, .ways-caption, .templates, .contact-panel, .contact-action, footer').forEach(push);
-  }
-  const label = section.querySelector('.label');
-  if (label) { label.classList.add('seq'); label.style.setProperty('--d', '0s'); }
-  if (title) { title.classList.add('seq'); title.style.setProperty('--d', '0s'); }
-  nodes.forEach((el, i) => { el.classList.add('seq'); el.style.setProperty('--d', `${0.16 + i * 0.07}s`); });
+  const seen = new Set();
+  const add = (el, delay, kind) => {
+    if (!el || seen.has(el)) return;
+    seen.add(el);
+    el.classList.add('seq');
+    if (kind) el.classList.add(kind);
+    el.style.setProperty('--d', `${delay.toFixed(2)}s`);
+  };
+  const title = section.querySelector('h2');
+  const label = section.querySelector('.section-head .label, .contact-copy .label');
+  const lead = section.querySelector('.section-lead, .contact-lead');
+  add(title, 0, 'seq-down');
+  add(label, 0.12, 'seq-kicker');
+  add(lead, 0.34, 'seq-rise');
+  const copy = [...section.querySelectorAll('.steps > li, .case-body, .pending-work, .contact-action')];
+  const visuals = [...section.querySelectorAll('.assembly, .case-preview, .stage-card, .contact-panel')];
+  let cursor = 0.56;
+  copy.forEach(el => { add(el, cursor, 'seq-rise'); cursor += 0.07; });
+  let picture = cursor + 0.12;
+  visuals.forEach(el => { add(el, picture, 'seq-rise'); picture += 0.12; });
 }
+const titleOf = section => section.querySelector('h2') || section;
 const showSection = section => section.classList.add('is-in');
-const sectionFills = entry => {
-  if (entry.boundingClientRect.bottom <= 0) return true;
-  const visible = entry.intersectionRect.height;
-  return visible >= innerHeight * .62 || (entry.boundingClientRect.top <= innerHeight * .18 && visible > 120);
-};
-const sectionWatch = new IntersectionObserver(entries => {
-  entries.forEach(entry => {
-    if (!sectionFills(entry)) return;
-    sectionWatch.unobserve(entry.target);
-    // Let the hidden state paint, then reveal the title before the body.
-    requestAnimationFrame(() => requestAnimationFrame(() => showSection(entry.target)));
+function headingPassed(section){
+  return titleOf(section).getBoundingClientRect().bottom < 48;
+}
+function headingInView(section){
+  const box = titleOf(section).getBoundingClientRect();
+  return box.top < innerHeight * 0.96 && box.bottom > 48;
+}
+function revealSections(){
+  document.querySelectorAll('.section:not(.is-in)').forEach(section => {
+    if (headingInView(section)) showSection(section);
+    else if (headingPassed(section)) section.classList.add('is-in', 'seq-instant');
   });
-}, {threshold:[0,.2,.35,.5,.75]});
-document.querySelectorAll('.hero, .section').forEach(section => { primeSequence(section); sectionWatch.observe(section); });
+}
+let revealTimer = 0;
+function queueReveal(){
+  revealSections();
+  clearTimeout(revealTimer);
+  revealTimer = setTimeout(revealSections, 60);
+}
+addEventListener('scroll', queueReveal, {passive:true});
+addEventListener('resize', queueReveal, {passive:true});
+document.querySelectorAll('.section').forEach(primeSequence);
+revealSections();
 
 // First view: dust gathers into each English letter at the viewport center, then the line settles and the hero follows.
 async function playHeroIntro(){
@@ -463,20 +477,44 @@ if (demo && matchMedia('(hover: hover) and (pointer: fine)').matches) {
   });
   demo.addEventListener('pointerleave', () => { pointer.hidden = true; });
 }
-const collaboration=document.querySelector('.collaboration-choice');collaboration.hidden=false;
-const collabTabs=[...document.querySelectorAll('[data-collab]')];
-const collabData={full:{areas:['brief','ux','ui','web','qa']},partial:{areas:['ui','web']},white:{areas:['ux','ui','web','qa']},long:{areas:['brief','ux','ui','web','qa']}};
-collabData.full.text='요구사항에서 공개까지, 전체 제작 범위를 프로젝트에 맞춰 협의합니다.';
-collabData.partial.text='기존 기획·디자인 자료를 확인하고 팀에 필요한 업무 구간을 정합니다. 강조된 구간은 예시이며, 실제 참여 범위는 협의합니다.';
-collabData.white.text='대행사가 최종 고객과 소통하고, 이서아가 합의한 제작 범위를 담당합니다. 커뮤니케이션·공개 범위와 NDA는 사전에 협의합니다.';
-collabData.long.text='반복되는 제작 수요와 프로젝트 상황에 맞춰 업무 범위·빈도·검토 방식을 협의합니다.';
-function setCollab(tab){const data=collabData[tab.dataset.collab];collabTabs.forEach(t=>{t.setAttribute('aria-selected',String(t===tab));t.tabIndex=t===tab?0:-1});document.querySelector('#collab-panel').setAttribute('aria-labelledby',tab.id);document.querySelector('#collab-description').textContent=data.text;document.querySelectorAll('[data-area]').forEach(li=>li.classList.toggle('selected',data.areas.includes(li.dataset.area)))}
-collabTabs.forEach((t,i)=>{t.addEventListener('click',()=>setCollab(t));t.addEventListener('keydown',e=>{let n;if(e.key==='ArrowRight')n=(i+1)%collabTabs.length;else if(e.key==='ArrowLeft')n=(i+collabTabs.length-1)%collabTabs.length;else if(e.key==='Home')n=0;else if(e.key==='End')n=collabTabs.length-1;else return;e.preventDefault();setCollab(collabTabs[n]);collabTabs[n].focus()})});setCollab(collabTabs[0]);
 document.querySelector('.inquiry-options').hidden=false;
 const inquiryRadios=[...document.querySelectorAll('input[name=inquiry-situation]')];
-const inquiryHints=['목표·대상·필수 콘텐츠와 희망 일정을 알려주세요.','기획서·디자인 자료와 진행 상태, 남은 업무를 알려주세요.','반복되는 업무와 빈도, 고객 커뮤니케이션 방식과 희망 일정을 알려주세요.'];
+const inquiryHints=['목표·대상·필수 콘텐츠와 희망 일정을 알려주세요. 범위가 아직 정리되지 않아도 괜찮습니다.','기획서·디자인 자료와 진행 상태, 남은 업무를 알려주세요.','반복되는 업무와 빈도, 고객 커뮤니케이션 방식과 희망 일정을 알려주세요.'];
 function setInquiry(){const i=inquiryRadios.findIndex(r=>r.checked);document.querySelector('#inquiry-help').textContent=inquiryHints[i];const body='협업 상황: '+inquiryRadios[i].value+'\n\n프로젝트 개요: \n필요한 업무: \n준비된 자료: \n희망 일정: \n';document.querySelector('.contact-action .button').href='mailto:seoah.lab@gmail.com?subject='+encodeURIComponent('B2B 웹 제작 문의 / '+inquiryRadios[i].value)+'&body='+encodeURIComponent(body)}
 inquiryRadios.forEach(r=>r.addEventListener('change',setInquiry));setInquiry();
+const contactEmail=document.querySelector('#contact-panel .email');
+if(contactEmail){
+  let copiedTimer=0;
+  contactEmail.addEventListener('click',async event=>{
+    event.preventDefault();
+    const address='seoah.lab@gmail.com';
+    let copied=false;
+    try{
+      await navigator.clipboard.writeText(address);
+      copied=true;
+    }catch{
+      try{
+        const field=document.createElement('textarea');
+        field.value=address;
+        field.setAttribute('readonly','');
+        field.style.position='fixed';
+        field.style.opacity='0';
+        document.body.append(field);
+        field.select();
+        copied=document.execCommand('copy');
+        field.remove();
+      }catch{ copied=false; }
+    }
+    if(!copied){ location.href=contactEmail.href; return; }
+    contactEmail.dataset.copied='true';
+    contactEmail.setAttribute('aria-label','seoah.lab@gmail.com, 복사됨');
+    clearTimeout(copiedTimer);
+    copiedTimer=setTimeout(()=>{
+      delete contactEmail.dataset.copied;
+      contactEmail.removeAttribute('aria-label');
+    },1600);
+  });
+}
 const layerWatch=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('layer-in');layerWatch.unobserve(entry.target)}}),{threshold:.6});document.querySelectorAll('.layers li').forEach(el=>layerWatch.observe(el));
 
 const wordTrack=document.querySelector('#word-track');
