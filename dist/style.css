@@ -683,3 +683,17 @@ html.hero-intro.hero-tabs-in .hero .scope{opacity:1;visibility:visible;transitio
 .build-art .phone span{align-self:flex-end;font-size:16px;line-height:1}
 .stage-foot{margin-top:28px;text-align:center;font-size:13px;color:#8a8178}
 @media(max-width:900px){.stage-cards{grid-template-columns:1fr}.stage-art{min-height:150px}}
+:root{--contact-border:#b9b5b0}
+.contact-fields{display:grid;gap:10px;text-align:left;margin:24px 0}
+.contact-fields label{font-size:15px;font-weight:600}
+.contact-fields label span{font-size:12px;font-weight:400}
+.contact-fields input,.contact-fields textarea{width:100%;box-sizing:border-box;font:inherit;font-size:16px;color:#181818;background:#fff;border:1px solid var(--contact-border);border-radius:12px;padding:14px;min-height:48px}
+.contact-fields textarea{resize:vertical}
+.contact-fields input:focus-visible,.contact-fields textarea:focus-visible,.contact-consent input:focus-visible{outline:2px solid #bd3c1f;outline-offset:3px}
+.contact-consent{display:flex;align-items:flex-start;gap:10px;text-align:left;font-size:14px;line-height:1.6;padding:12px 0;min-height:44px}
+.contact-consent input{width:20px;height:20px;flex:none;margin-top:2px;accent-color:#bd3c1f}
+.contact-privacy{text-align:left;font-size:12px;line-height:1.7;margin:0 0 24px;color:#555}
+.contact-privacy summary{cursor:pointer;min-height:44px;display:flex;align-items:center;text-decoration:underline}
+.contact-trap{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+#contact-form button:disabled{opacity:.55;cursor:not-allowed}
+#contact-status{min-height:3em}

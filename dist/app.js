@@ -480,7 +480,7 @@ if (demo && matchMedia('(hover: hover) and (pointer: fine)').matches) {
 document.querySelector('.inquiry-options').hidden=false;
 const inquiryRadios=[...document.querySelectorAll('input[name=inquiry-situation]')];
 const inquiryHints=['목표·대상·필수 콘텐츠와 희망 일정을 알려주세요. 범위가 아직 정리되지 않아도 괜찮습니다.','기획서·디자인 자료와 진행 상태, 남은 업무를 알려주세요.','반복되는 업무와 빈도, 고객 커뮤니케이션 방식과 희망 일정을 알려주세요.'];
-function setInquiry(){const i=inquiryRadios.findIndex(r=>r.checked);document.querySelector('#inquiry-help').textContent=inquiryHints[i];const body='협업 상황: '+inquiryRadios[i].value+'\n\n프로젝트 개요: \n필요한 업무: \n준비된 자료: \n희망 일정: \n';document.querySelector('.contact-action .button').href='mailto:seoah.lab@gmail.com?subject='+encodeURIComponent('B2B 웹 제작 문의 / '+inquiryRadios[i].value)+'&body='+encodeURIComponent(body)}
+function setInquiry(){const i=inquiryRadios.findIndex(r=>r.checked);document.querySelector('#inquiry-help').textContent=inquiryHints[i]}
 inquiryRadios.forEach(r=>r.addEventListener('change',setInquiry));setInquiry();
 const contactEmail=document.querySelector('#contact-panel .email');
 if(contactEmail){
