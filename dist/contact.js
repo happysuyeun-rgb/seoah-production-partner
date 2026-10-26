@@ -3,12 +3,23 @@ if (form) {
   const button = form.querySelector('button[type=submit]');
   const status = document.querySelector('#contact-status');
   let busy = false;
+  let available = false;
   let requestId;
   const setStatus = text => { status.textContent = text; };
+  function updateButton() {
+    const contact = form.elements.contact.value.trim();
+    const digits = contact.replace(/\D/g, '');
+    const validContact = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact) || (/^[+\d ()-]+$/.test(contact) && digits.length >= 9 && digits.length <= 15);
+    button.disabled = busy || !available || !form.elements.name.value.trim() || !validContact || !form.elements.message.value.trim() || !form.querySelector('input[name="inquiry-situation"]:checked') || !form.elements.consent.checked || !Array.from(form.elements).every(el => !el.willValidate || el.validity.valid);
+  }
   fetch('/api/contact', {cache:'no-store'}).then(r => r.ok ? r.json() : {}).then(data => {
-    if (data.enabled) { button.disabled = false; setStatus('내용을 작성한 뒤 보내주세요. 별도 문의 DB에는 저장하지 않습니다.'); }
+    if (data.enabled) { available = true; updateButton(); setStatus('모든 항목을 작성하고 개인정보 수집·이용에 동의하면 보낼 수 있습니다.'); }
   }).catch(() => {});
-  form.addEventListener('input', () => { requestId = undefined; });
+  form.addEventListener('input', () => { requestId = undefined; form.elements.contact.setCustomValidity(''); updateButton(); });
+  form.addEventListener('change', updateButton);
+  form.addEventListener('reset', () => { setTimeout(updateButton, 0); });
+  addEventListener('pageshow', updateButton);
+  updateButton();
   form.addEventListener('submit', async event => {
     event.preventDefault();
     if (busy || button.disabled || !form.reportValidity()) return;
@@ -30,6 +41,6 @@ if (form) {
       form.reset(); requestId = undefined;
       setStatus('문의 메일 발송 요청이 접수되었습니다. 확인 후 연락드리겠습니다.');
     } catch { setStatus('접수를 확인하지 못했습니다. 입력 내용은 유지됩니다. 잠시 후 다시 시도하거나 아래 이메일·전화로 문의해 주세요.'); }
-    finally { busy = false; button.disabled = false; form.removeAttribute('aria-busy'); }
+    finally { busy = false; updateButton(); form.removeAttribute('aria-busy'); }
   });
 }
