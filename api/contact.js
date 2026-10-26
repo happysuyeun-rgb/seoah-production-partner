@@ -1,6 +1,12 @@
 const situations = ['기획부터 필요한 프로젝트', '준비된 자료가 있는 프로젝트', '지속적인 제작 파트너십'];
 const email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const ready = () => process.env.CONTACT_ENABLED === 'true' && process.env.RESEND_API_KEY && process.env.CONTACT_FROM;
+function scriptUrl() {
+  try {
+    const url = new URL(process.env.CONTACT_SCRIPT_URL);
+    return url.protocol === 'https:' && url.hostname === 'script.google.com' && /^\/macros\/s\/[\w-]+\/exec$/.test(url.pathname) && !url.search && !url.hash ? url.href : null;
+  } catch { return null; }
+}
+const ready = () => process.env.CONTACT_ENABLED === 'true' && scriptUrl() && process.env.CONTACT_SHARED_SECRET;
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -20,13 +26,13 @@ export default async function handler(req, res) {
   const phone = /^[+\d ()-]+$/.test(contact) && contact.replace(/\D/g,'').length >= 9 && contact.replace(/\D/g,'').length <= 15;
   if (!name || name.length > 80 || /[\r\n\x00-\x1f]/.test(name) || contact.length > 160 || (!email.test(contact) && !phone) || /[\r\n]/.test(contact) || message.length > 3000 || b.consent !== 'yes' || !situations.includes(b.situation) || !/^[a-f0-9-]{36}$/.test(b.requestId || '')) return res.status(400).json({error:'invalid'});
   try {
-    const result = await fetch('https://api.resend.com/emails', {
+    const result = await fetch(scriptUrl(), {
       method:'POST', signal:AbortSignal.timeout(10000),
-      headers:{Authorization:`Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type':'application/json', 'Idempotency-Key':`contact/${b.requestId}`},
-      body:JSON.stringify({from:process.env.CONTACT_FROM, to:['seoah.lab@gmail.com'], ...(email.test(contact) ? {reply_to:contact} : {}), subject:`[SEOAH B2B] 상담 문의 — ${b.situation}`, text:`프로젝트 상황: ${b.situation}\n이름: ${name}\n연락처: ${contact}\n\n문의 내용:\n${message || '(작성하지 않음)'}\n\n개인정보 동의: yes\n접수 경로: B2B Landing`})
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name,contact,message,situation:b.situation,consent:'yes',website:'',requestId:b.requestId,secret:process.env.CONTACT_SHARED_SECRET})
     });
     const data = await result.json();
-    if (!result.ok || !data.id) return res.status(502).json({error:'delivery'});
+    if (!result.ok || data.ok !== true) return res.status(data.error === 'rate_limited' ? 429 : 502).json({error:'delivery'});
     return res.status(200).json({ok:true});
   } catch { return res.status(502).json({error:'delivery'}); }
 }

@@ -6,7 +6,7 @@ const base={method:'POST',headers:{origin:'https://seoah-production-partner.verc
 async function run(req){const res={setHeader(){},status(n){this.code=n;return this},json(data){this.data=data;return this}};await handler(req,res);return res;}
 delete process.env.CONTACT_ENABLED;
 assert.equal((await run(base)).code,503);
-process.env.CONTACT_ENABLED='true';process.env.RESEND_API_KEY='test-not-a-secret';process.env.CONTACT_FROM='test@example.com';
+process.env.CONTACT_ENABLED='true';process.env.CONTACT_SHARED_SECRET='test-not-a-secret';process.env.CONTACT_SCRIPT_URL='https://script.google.com/macros/s/test-deployment/exec';
 assert.equal((await run({...base,headers:{...base.headers,origin:'https://other.example'}})).code,403);
 assert.equal((await run({...base,body:{...base.body,consent:'no'}})).code,400);
 assert.equal((await run({...base,body:{...base.body,contact:'bad'}})).code,400);
@@ -14,7 +14,7 @@ assert.equal((await run({...base,body:{...base.body,website:'bot'}})).code,400);
 const saved=globalThis.fetch;
 try{
 globalThis.fetch=async()=>({ok:false,json:async()=>({})});assert.equal((await run(base)).code,502);
-globalThis.fetch=async(url,options)=>{const body=JSON.parse(options.body);assert.deepEqual(body.to,['seoah.lab@gmail.com']);assert.equal(body.reply_to,'test@example.com');assert.equal(options.headers['Idempotency-Key'],'contact/'+base.body.requestId);return{ok:true,json:async()=>({id:'mock-email'})}};
+globalThis.fetch=async(url,options)=>{const body=JSON.parse(options.body);assert.equal(url,process.env.CONTACT_SCRIPT_URL);assert.equal(body.contact,'test@example.com');assert.equal(body.secret,process.env.CONTACT_SHARED_SECRET);assert.equal(body.requestId,base.body.requestId);return{ok:true,json:async()=>({ok:true})}};
 assert.equal((await run(base)).data.ok,true);
 }finally{globalThis.fetch=saved}
 console.log('PASS: disabled/origin/consent/contact/honeypot/provider failure/success/idempotency; mocked only, no email sent');
