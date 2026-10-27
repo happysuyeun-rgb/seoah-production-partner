@@ -697,3 +697,10 @@ html.hero-intro.hero-tabs-in .hero .scope{opacity:1;visibility:visible;transitio
 .contact-trap{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 #contact-form button:disabled{opacity:.55;cursor:not-allowed}
 #contact-status{min-height:3em}
+.collaboration-faq{background:#f6f3ee;color:#181818}
+.collaboration-faq h2{font-size:clamp(28px,4vw,52px);margin:16px 0 32px;letter-spacing:-.04em}
+.collaboration-faq details{border-top:1px solid #c8c3bc;padding:0}
+.collaboration-faq details:last-child{border-bottom:1px solid #c8c3bc}
+.collaboration-faq summary{cursor:pointer;padding:22px 0;min-height:48px;font-size:clamp(16px,1.6vw,20px);font-weight:600;line-height:1.6}
+.collaboration-faq summary:focus-visible{outline:2px solid #bd3c1f;outline-offset:4px}
+.collaboration-faq details p{max-width:760px;margin:0 0 24px;font-size:16px;line-height:1.9;word-break:keep-all;overflow-wrap:anywhere}
