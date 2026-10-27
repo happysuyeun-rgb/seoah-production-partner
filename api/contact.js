@@ -23,6 +23,7 @@ export default async function handler(req, res) {
   const name = typeof b.name === 'string' ? b.name.trim() : '';
   const contact = typeof b.contact === 'string' ? b.contact.trim() : '';
   const message = typeof b.message === 'string' ? b.message.trim() : '';
+  if (!message) return res.status(400).json({error:'invalid'});
   const phone = /^[+\d ()-]+$/.test(contact) && contact.replace(/\D/g,'').length >= 9 && contact.replace(/\D/g,'').length <= 15;
   if (!name || name.length > 80 || /[\r\n\x00-\x1f]/.test(name) || contact.length > 160 || (!email.test(contact) && !phone) || /[\r\n]/.test(contact) || message.length > 3000 || b.consent !== 'yes' || !situations.includes(b.situation) || !/^[a-f0-9-]{36}$/.test(b.requestId || '')) return res.status(400).json({error:'invalid'});
   try {

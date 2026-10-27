@@ -13,6 +13,12 @@ assert.equal((await run({...base,body:{...base.body,contact:'bad'}})).code,400);
 assert.equal((await run({...base,body:{...base.body,website:'bot'}})).code,400);
 const saved=globalThis.fetch;
 try{
+let calls=0;
+globalThis.fetch=async()=>{calls++;throw new Error('must not call provider');};
+for(const message of ['', '   ', null, 123]) assert.equal((await run({...base,body:{...base.body,message}})).code,400);
+assert.equal(calls,0);
+globalThis.fetch=async()=>({ok:true,json:async()=>({ok:false,error:'rate_limited'})});
+assert.equal((await run(base)).code,429);
 globalThis.fetch=async()=>({ok:false,json:async()=>({})});assert.equal((await run(base)).code,502);
 globalThis.fetch=async(url,options)=>{const body=JSON.parse(options.body);assert.equal(url,process.env.CONTACT_SCRIPT_URL);assert.equal(body.contact,'test@example.com');assert.equal(body.secret,process.env.CONTACT_SHARED_SECRET);assert.equal(body.requestId,base.body.requestId);return{ok:true,json:async()=>({ok:true})}};
 assert.equal((await run(base)).data.ok,true);

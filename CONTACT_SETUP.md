@@ -1,32 +1,24 @@
-# B2B 문의 폼 — 활성화 전 체크리스트
+# B2B 문의 폼 — 현재 운영 구조
 
-현재 상태: 구현/로컬 자동 검사 준비. 운영 활성화 금지(설정·개인정보 정책 검토 전).
+- Vercel `/api/contact` → Google Apps Script → Gmail `seoah.lab@gmail.com`.
+- 별도 DB·Google Sheets·Resend 없음. 2026-10-26 운영 테스트 수신 및 사용자 확인 완료.
+- 모든 입력·동의가 유효해야 버튼 활성화, 전송 중 중복 클릭 차단.
 
-## 구성
+## 서버 설정
 
-- 기존 3개 상황 + 이름 + 이메일/전화 + 선택 문의 + 필수 동의.
-- `/api/contact`: Vercel Node 함수 → Resend → 고정 수신자 `seoah.lab@gmail.com`.
-- 별도 DB 없음. 문의는 수신 메일함과 메일 처리업체에서 처리된다.
-- 원문·전화·이메일·API 키를 콘솔에 기록하지 않는다.
-- honeypot, same-origin 검사, 입력 크기/형식 검사, 클라이언트 중복 제출 차단, Resend idempotency key.
-- 메일 API 수락은 최종 Gmail 받은편지함 도착 보장이 아니다. 테스트 메일로 받은편지함/스팸함 확인 필수.
+`CONTACT_ENABLED=true`, `CONTACT_SCRIPT_URL`(승인된 exec URL), `CONTACT_SHARED_SECRET`(서버 전용), `CONTACT_SITE_ORIGIN`(해당 환경의 정확한 origin).
+Secret을 Git·클라이언트·로그에 노출하지 않는다. Preview와 Production 설정을 구분한다.
 
-## 활성화 순서
+## 검증·남은 일
 
-1. Resend 계정·발신 도메인 소유권 인증. 승인 없이 도메인 구매나 결제하지 않는다.
-2. Vercel 서버 환경변수 `RESEND_API_KEY`, `CONTACT_FROM`(인증한 발신 주소), `CONTACT_SITE_ORIGIN`(운영 origin) 설정. 키를 GitHub나 브라우저 코드에 넣지 않는다.
-3. `/api/contact` POST에 플랫폼 수준 요청 횟수 제한을 설정하고 차단 테스트. 메모리 Map은 분산 서버의 rate limit으로 간주하지 않는다.
-4. 운영자가 문의 보유기간·삭제 절차와 Resend/Vercel 처리·보관·국외 이전 조건을 확정하고 폼의 개인정보 안내를 교체한다. 현재 안내는 공개 승인 전 초안이다.
-5. Preview에서는 별도 허용 origin으로 실패/성공·모바일·키보드 검수. Preview 링크를 운영 origin 대신 허용하지 않는다.
-6. 검증 후 `CONTACT_ENABLED=true` 설정, 재배포. 활성화 전 GET은 enabled=false이며 제출 버튼은 비활성화된다.
-7. 승인된 테스트 연락처로 1회 발송하고 실제 Gmail 수신 확인. 데이터가 메일함에 남는 점에 주의.
+- API에서 필수 이름·연락처·문의 내용·상황·동의·요청 ID·honeypot·origin·크기 검증.
+- `node scripts/contact-test.mjs`: mock 검사, 메일 발송 없음. 빈 내용 거절, 공급자 실패 502·rate_limited 429 검사.
+- origin·honeypot은 보조 방어이며 요청 횟수 제한의 대체가 아니다.
+- Apps Script 기존 전역 요청 제한·캐시 기반 중복 방지는 운영 설정 재확인 대상. exactly-once 보장으로 표현하지 않는다.
+- Vercel 플랫폼 요청 제한 적용·실차단 검증은 미완료. 운영 API 대량 테스트 금지.
+- 모바일·키보드·전송 실패·재시도 브라우저 재검수는 별도 기록한다.
 
-## 완료 기준
+## 개인정보 운영
 
-- [ ] 실발송 및 실제 수신
-- [ ] 개인정보 처리 안내 확정
-- [ ] 서버 요청 횟수 제한 검증
-- [ ] 운영·모바일·키보드 검수
-- [ ] 성공/실패/중복 요청 검증
-
-메일 서비스 설정 전에는 main/Production에 병합하지 않고 기능 브랜치에서 보관한다. 기존 메일·전화 링크는 유지한다.
+화면의 상담 목적 수집·Vercel/Google 처리·국외 처리 가능성 안내를 유지한다. 상담 종료 후 90일 이내 삭제는 운영자가 수행할 절차이며 자동 삭제 구현이 아니다. 법적 적합성 검토 완료를 뜻하지 않는다.
+불필요한 테스트메일 재발송은 하지 않는다.
