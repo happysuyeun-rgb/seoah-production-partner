@@ -1,8 +1,8 @@
 {
   "siteUrl": "https://seoah-production-partner.vercel.app",
   "siteName": "서아 스튜디오",
-  "title": "서아 스튜디오 | UX/UI 디자인·기업 웹사이트 제작",
-  "description": "서아 스튜디오는 기업과 스타트업을 위한 디지털 제작 파트너입니다. UX 기획, UI/UX 디자인, 랜딩페이지·반응형 웹사이트 제작부터 QA·배포까지 필요한 범위를 함께합니다.",
+  "title": "서아 스튜디오 | 웹 제작 파트너 이서아 · UX/UI 디자인",
+  "description": "서아 스튜디오(SEOAH STUDIO)는 웹 제작 파트너 이서아의 독립 스튜디오입니다. 웹에이전시와 기업을 대상으로 UX 기획·UI/UX 디자인·반응형 웹 제작부터 QA·배포까지, 부분 외주와 장기 협업을 함께합니다.",
   "indexingEnabled": true,
   "ogImage": "/og-cover.jpg",
   "ogImageWidth": 1200,
@@ -37,5 +37,5 @@
     "B2B 웹 제작 파트너",
     "이서아"
   ],
-  "lastModified": "2026-10-26"
+  "lastModified": "2026-10-29"
 }
