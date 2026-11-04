@@ -6,7 +6,6 @@ const hero = document.querySelector('.hero');
 const progressBar = document.querySelector('.reading-progress');
 const journey = document.querySelector('#journey');
 const steps = [...document.querySelectorAll('[data-step]')];
-const frame = document.querySelector('.assembly-frame');
 const timeline = document.querySelector('.timeline');
 const clamp = (value, min = 0, max = 1) => Math.max(min, Math.min(max, value));
 const motionAllowed = () => !reduced.matches;
@@ -64,7 +63,6 @@ function update(){
   document.body.classList.toggle('show-top', !sceneCover && scrollY > innerHeight * .55);
   hero.style.setProperty('--hy', !sceneCover && heroInView && motion && wide.matches ? String(Math.round(scrollY)) : '0');
   steps.forEach((el, i) => el.classList.toggle('active', i <= Math.floor(fraction * (steps.length - .001))));
-  if (frame) frame.style.setProperty('--a', motion ? clamp(fraction * 1.4).toFixed(3) : '1');
   if (t) {
     const tl = motion ? clamp((innerHeight * .9 - t.top) / (innerHeight * .5)) : 1;
     const vertical = !wide.matches;
@@ -146,14 +144,15 @@ function primeSequence(section){
     if (kind) el.classList.add(kind);
     el.style.setProperty('--d', `${delay.toFixed(2)}s`);
   };
+  if (section.id === 'work') return;
   const title = section.querySelector('h2');
   const label = section.querySelector('.section-head .label, .contact-copy .label');
   const lead = section.querySelector('.section-lead, .contact-lead');
   add(title, 0, 'seq-down');
   add(label, 0.12, 'seq-kicker');
   add(lead, 0.34, 'seq-rise');
-  const copy = [...section.querySelectorAll('.steps > li, .case-body, .pending-work, .contact-action')];
-  const visuals = [...section.querySelectorAll('.assembly, .case-preview, .stage-card, .contact-panel')];
+  const copy = [...section.querySelectorAll('.process-rows > li, .case-body, .pending-work, .contact-action')];
+  const visuals = [...section.querySelectorAll('.case-preview, .stage-card, .contact-panel')];
   let cursor = 0.56;
   copy.forEach(el => { add(el, cursor, 'seq-rise'); cursor += 0.07; });
   let picture = cursor + 0.12;
@@ -169,23 +168,66 @@ function headingInView(section){
   return box.top < innerHeight * 0.96 && box.bottom > 48;
 }
 function revealSections(){
-  document.querySelectorAll('.section:not(.is-in)').forEach(section => {
+  document.querySelectorAll('.section:not(.is-in):not(#work)').forEach(section => {
     if (headingInView(section)) showSection(section);
     else if (headingPassed(section)) section.classList.add('is-in', 'seq-instant');
   });
 }
+function setWorkOpacity(el, value){
+  if (el) el.style.opacity = String(Math.max(0, Math.min(1, value)));
+}
+function updateWorkReveal(){
+  const work = document.querySelector('#work');
+  if (!work) return;
+  const title = work.querySelector('#work-title');
+  const lead = work.querySelector('.section-lead');
+  const pending = work.querySelector('.pending-work');
+  if (!title) return;
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches){
+    setWorkOpacity(title, 1);
+    setWorkOpacity(lead, 1);
+    setWorkOpacity(pending, 1);
+    work.classList.add('is-in');
+    return;
+  }
+  const box = title.getBoundingClientRect();
+  const mid = (box.top + box.bottom) / 2;
+  if (box.bottom < 56){
+    setWorkOpacity(title, 1);
+    setWorkOpacity(lead, 1);
+    setWorkOpacity(pending, 1);
+    work.classList.add('is-in');
+    return;
+  }
+  // Fade while the title travels from the lower viewport into the reading center.
+  const start = innerHeight * 0.82;
+  const end = innerHeight * 0.46;
+  let t = (start - mid) / (start - end);
+  t = Math.max(0, Math.min(1, t));
+  const ease = t * t * (3 - 2 * t);
+  setWorkOpacity(title, ease);
+  setWorkOpacity(lead, (ease - 0.12) / 0.88);
+  setWorkOpacity(pending, (ease - 0.28) / 0.72);
+  if (ease > 0.02) work.classList.add('is-in');
+}
 let revealTimer = 0;
 function queueReveal(){
   revealSections();
+  updateWorkReveal();
   clearTimeout(revealTimer);
-  revealTimer = setTimeout(revealSections, 60);
+  revealTimer = setTimeout(() => {
+    revealSections();
+    updateWorkReveal();
+  }, 60);
 }
 addEventListener('scroll', queueReveal, {passive:true});
 addEventListener('resize', queueReveal, {passive:true});
 document.querySelectorAll('.section').forEach(primeSequence);
 revealSections();
+updateWorkReveal();
 
 // First view: dust gathers into each English letter at the viewport center, then the line settles and the hero follows.
+// Any scroll/wheel/touch scroll ends the intro immediately so the fixed line cannot overlap the page.
 async function playHeroIntro(){
   const root = document.documentElement;
   const brand = document.querySelector('.hero-brand');
@@ -196,6 +238,42 @@ async function playHeroIntro(){
   }
   if (document.fonts?.ready) await document.fonts.ready;
   const letters = [...document.querySelectorAll('.hero-letter')];
+  const timers = [];
+  const later = (fn, ms) => {
+    const id = setTimeout(fn, ms);
+    timers.push(id);
+    return id;
+  };
+  let finished = false;
+  let titleReady = false;
+  const clearTimers = () => {
+    timers.splice(0).forEach(clearTimeout);
+  };
+  const releaseTitle = () => {
+    if (titleReady) return;
+    titleReady = true;
+    document.dispatchEvent(new Event('hero-title-ready'));
+  };
+  const endIntro = () => {
+    if (finished) return;
+    finished = true;
+    clearTimers();
+    removeEventListener('wheel', endIntro);
+    removeEventListener('touchmove', endIntro);
+    removeEventListener('scroll', endIntro);
+    root.classList.remove('hero-intro', 'hero-settle', 'hero-prep', 'hero-fade', 'hero-title-in', 'hero-line-in', 'hero-lead-in', 'hero-action-in', 'hero-tabs-in', 'hero-lab-in');
+    letters.forEach(letter => {
+      letter.classList.remove('is-dust', 'is-on', 'is-seat', 'is-seated');
+      letter.style.removeProperty('--tx');
+      letter.style.removeProperty('--ty');
+      letter.style.removeProperty('--spin');
+      letter.querySelectorAll('.hero-dust').forEach(dust => dust.remove());
+    });
+    releaseTitle();
+  };
+  addEventListener('wheel', endIntro, {passive:true});
+  addEventListener('touchmove', endIntro, {passive:true});
+  addEventListener('scroll', endIntro, {passive:true});
   letters.forEach(letter => {
     const glyph = document.createElement('span');
     glyph.className = 'hero-glyph';
@@ -225,36 +303,32 @@ async function playHeroIntro(){
   });
   void brand.offsetWidth;
   root.classList.remove('hero-prep');
+  if (finished) return;
   const step = 120;
   const dustLead = 260;
   letters.forEach((letter, index) => {
-    setTimeout(() => letter.classList.add('is-dust'), index * step);
-    setTimeout(() => letter.classList.add('is-on'), index * step + dustLead);
+    later(() => { if (!finished) letter.classList.add('is-dust'); }, index * step);
+    later(() => { if (!finished) letter.classList.add('is-on'); }, index * step + dustLead);
   });
   const opened = (letters.length - 1) * step + dustLead + 760;
-  const mark = (name, at) => setTimeout(() => root.classList.add(name), opened + at);
-  setTimeout(() => root.classList.add('hero-fade', 'hero-title-in'), opened);
-  setTimeout(() => {
+  const mark = (name, at) => later(() => { if (!finished) root.classList.add(name); }, opened + at);
+  later(() => { if (!finished) root.classList.add('hero-fade', 'hero-title-in'); }, opened);
+  later(() => {
+    if (finished) return;
     root.classList.add('hero-prep', 'hero-settle');
     root.classList.remove('hero-fade');
     letters.forEach(letter => letter.classList.add('is-seat'));
     void brand.offsetWidth;
     root.classList.remove('hero-prep');
-    letters.forEach((letter, index) => setTimeout(() => letter.classList.add('is-seated'), index * 46));
+    letters.forEach((letter, index) => later(() => { if (!finished) letter.classList.add('is-seated'); }, index * 46));
   }, opened + 900);
-  setTimeout(() => document.dispatchEvent(new Event('hero-title-ready')), opened);
+  later(() => { if (!finished) releaseTitle(); }, opened);
   mark('hero-line-in', 320);
   mark('hero-lead-in', 680);
   mark('hero-action-in', 680);
   mark('hero-tabs-in', 1020);
   mark('hero-lab-in', 1020);
-  setTimeout(() => {
-    root.classList.remove('hero-intro', 'hero-settle', 'hero-prep', 'hero-fade', 'hero-title-in', 'hero-line-in', 'hero-lead-in', 'hero-action-in', 'hero-tabs-in', 'hero-lab-in');
-    letters.forEach(letter => {
-      letter.classList.remove('is-seat', 'is-seated');
-      letter.querySelectorAll('.hero-dust').forEach(dust => dust.remove());
-    });
-  }, opened + 3900);
+  later(endIntro, opened + 3900);
 }
 playHeroIntro();
 
