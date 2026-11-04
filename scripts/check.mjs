@@ -17,7 +17,7 @@ for(const aria of html.matchAll(/aria-(?:controls|labelledby)="([^"]+)"/g))for(c
 const css=await read('style.css');assert(css.includes('prefers-reduced-motion'));assert(css.includes(':focus-visible'));assert(css.includes('.delivery-panel[hidden]'));
 const app=await read('app.js');for(const event of ['partnership_cta_click','email_click','phone_click'])assert(html.includes(event));for(const event of ['live_demo_click','project_view'])assert(app.includes(event));
 for(const file of ['app.js','content.js','site-settings.js'])execFileSync(process.execPath,['--check',resolve(root,'dist',file)]);
-const schema=JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);assert.equal(schema['@graph'][0].name,'이서아');
+const schema=JSON.parse(html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)[1]);assert.equal(schema['@graph'].find(item=>item['@type']==='Person')?.name,'이서아');assert.equal(schema['@graph'].find(item=>item['@type']==='Organization')?.name,'서아 스튜디오');assert.equal(schema['@graph'].find(item=>item['@type']==='WebSite')?.publisher?.['@id'],origin+'/#organization');
 const og=await stat(resolve(root,'dist',config.ogImage.slice(1)));assert(og.size<300000,'share image under 300 KB');
 console.log('PASS: SEO metadata / schema / canonical / robots / sitemap / assets / CTA hrefs / headings / ARIA references / no-JS content / motion and focus CSS / JS syntax / OG payload');
 console.log('Browser rendering, runtime console, actual clicks, HTTP 404 and CWV measurement are separate pending checks.');

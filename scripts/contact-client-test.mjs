@@ -1,0 +1,32 @@
+import assert from 'node:assert/strict';
+import vm from 'node:vm';
+import {readFile} from 'node:fs/promises';
+const source=await readFile(new URL('../dist/contact.js',import.meta.url),'utf8');
+const flush=()=>new Promise(resolve=>setImmediate(resolve));
+async function fixture(enabled=true){
+  const handlers={},button={disabled:true},status={textContent:''};
+  const field=value=>({value,willValidate:true,validity:{valid:true},setCustomValidity(){},addEventListener(){}});
+  const elements={name:field(''),contact:field(''),message:field(''),consent:{...field('yes'),checked:false}};
+  elements[Symbol.iterator]=function*(){yield* Object.values(elements)};
+  const form={elements,querySelector:s=>s==='button[type=submit]'?button:{value:'기획부터 필요한 프로젝트'},addEventListener:(n,f)=>handlers[n]=f,setAttribute(){},removeAttribute(){},reportValidity:()=>true,reset(){elements.name.value='';elements.contact.value='';elements.message.value='';elements.consent.checked=false;handlers.reset();}};
+  let post,posts=0;
+  const ctx={document:{querySelector:s=>s==='#contact-form'?form:status},fetch:async(url,options)=>options?.method==='POST'?(posts++,post(options)):({ok:true,json:async()=>({enabled})}),addEventListener(){},setTimeout,AbortSignal,crypto:{randomUUID:()=> '12345678-1234-1234-1234-123456789012'},FormData:class{get(k){if(k==='inquiry-situation')return '기획부터 필요한 프로젝트';if(k==='website')return '';return elements[k].value;}}};
+  vm.runInNewContext(source,ctx);await flush();
+  return {elements,button,status,handlers,setPost:f=>post=f,posts:()=>posts,fill(){elements.name.value='검수';elements.contact.value='test@example.com';elements.message.value='문의';elements.consent.checked=true;handlers.input();}};
+}
+const f=await fixture();assert.equal(f.button.disabled,true);
+f.fill();assert.equal(f.button.disabled,false);
+f.elements.contact.value='bad';f.handlers.input();assert.equal(f.button.disabled,true);
+f.fill();f.elements.message.value='  ';f.handlers.input();assert.equal(f.button.disabled,true);
+f.fill();f.elements.consent.checked=false;f.handlers.change();assert.equal(f.button.disabled,true);
+f.fill();let reject;f.setPost(()=>new Promise((_,r)=>reject=r));
+const first=f.handlers.submit({preventDefault(){}});
+assert.equal(f.button.disabled,true);
+await f.handlers.submit({preventDefault(){}});assert.equal(f.posts(),1);
+reject(new Error('network'));await first;
+assert.equal(f.elements.message.value,'문의');assert.match(f.status.textContent,/입력 내용은 유지/);assert.equal(f.button.disabled,false);
+f.setPost(async()=>({ok:false,json:async()=>({error:'delivery'})}));await f.handlers.submit({preventDefault(){}});assert.equal(f.elements.message.value,'문의');
+f.setPost(async()=>({ok:true,json:async()=>({ok:true})}));await f.handlers.submit({preventDefault(){}});
+assert.equal(f.elements.message.value,'');assert.equal(f.button.disabled,true);assert.match(f.status.textContent,/접수되었습니다/);
+const off=await fixture(false);off.fill();assert.equal(off.button.disabled,true);
+console.log('PASS: client initial/valid/invalid/whitespace/consent/busy/duplicate/network failure/provider failure/retry/success reset/unavailable; isolated VM, no network or email');
