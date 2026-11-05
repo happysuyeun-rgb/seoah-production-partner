@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 const code=await readFile(new URL('../api/contact.js',import.meta.url),'utf8');
 const {default:handler}=await import('data:text/javascript;base64,'+Buffer.from(code).toString('base64'));
-const base={method:'POST',headers:{origin:'https://seoah-production-partner.vercel.app','content-type':'application/json'},body:{name:'테스트',contact:'test@example.com',message:'테스트',situation:'기획부터 필요한 프로젝트',consent:'yes',website:'',requestId:'12345678-1234-1234-1234-123456789012'}};
+const base={method:'POST',headers:{origin:'https://seoah-production-partner.vercel.app','content-type':'application/json'},body:{name:'테스트',contact:'test@example.com',message:'테스트',situation:'기획부터 필요한 프로젝트',services:['브랜드·기업 웹사이트'],consent:'yes',website:'',requestId:'12345678-1234-1234-1234-123456789012'}};
 async function run(req){const res={setHeader(){},status(n){this.code=n;return this},json(data){this.data=data;return this}};await handler(req,res);return res;}
 delete process.env.CONTACT_ENABLED;
 assert.equal((await run(base)).code,503);

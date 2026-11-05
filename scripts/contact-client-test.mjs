@@ -8,9 +8,9 @@ async function fixture(enabled=true){
   const field=value=>({value,willValidate:true,validity:{valid:true},setCustomValidity(){},addEventListener(){}});
   const elements={name:field(''),contact:field(''),message:field(''),consent:{...field('yes'),checked:false}};
   elements[Symbol.iterator]=function*(){yield* Object.values(elements)};
-  const form={elements,querySelector:s=>s==='button[type=submit]'?button:{value:'기획부터 필요한 프로젝트'},addEventListener:(n,f)=>handlers[n]=f,setAttribute(){},removeAttribute(){},reportValidity:()=>true,reset(){elements.name.value='';elements.contact.value='';elements.message.value='';elements.consent.checked=false;handlers.reset();}};
+  const form={elements,querySelector:s=>s==='button[type=submit]'?button:s.includes('inquiry-service')?{checked:true}:{value:'기획부터 필요한 프로젝트'},addEventListener:(n,f)=>handlers[n]=f,setAttribute(){},removeAttribute(){},reportValidity:()=>true,reset(){elements.name.value='';elements.contact.value='';elements.message.value='';elements.consent.checked=false;handlers.reset();}};
   let post,posts=0;
-  const ctx={document:{querySelector:s=>s==='#contact-form'?form:status},fetch:async(url,options)=>options?.method==='POST'?(posts++,post(options)):({ok:true,json:async()=>({enabled})}),addEventListener(){},setTimeout,AbortSignal,crypto:{randomUUID:()=> '12345678-1234-1234-1234-123456789012'},FormData:class{get(k){if(k==='inquiry-situation')return '기획부터 필요한 프로젝트';if(k==='website')return '';return elements[k].value;}}};
+  const ctx={document:{querySelector:s=>s==='#contact-form'?form:status},fetch:async(url,options)=>options?.method==='POST'?(posts++,post(options)):({ok:true,json:async()=>({enabled})}),addEventListener(){},setTimeout,AbortSignal,crypto:{randomUUID:()=> '12345678-1234-1234-1234-123456789012'},FormData:class{get(k){if(k==='inquiry-situation')return '기획부터 필요한 프로젝트';if(k==='website')return '';return elements[k].value;}getAll(k){return k==='inquiry-service'?['브랜드·기업 웹사이트']:[];}}};
   vm.runInNewContext(source,ctx);await flush();
   return {elements,button,status,handlers,setPost:f=>post=f,posts:()=>posts,fill(){elements.name.value='검수';elements.contact.value='test@example.com';elements.message.value='문의';elements.consent.checked=true;handlers.input();}};
 }

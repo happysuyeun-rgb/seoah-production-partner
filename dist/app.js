@@ -152,7 +152,7 @@ function primeSequence(section){
   add(label, 0.12, 'seq-kicker');
   add(lead, 0.34, 'seq-rise');
   const copy = [...section.querySelectorAll('.process-rows > li, .case-body, .pending-work, .contact-action')];
-  const visuals = [...section.querySelectorAll('.case-preview, .stage-card, .contact-panel')];
+  const visuals = [...section.querySelectorAll('.case-preview, .stage-card, .site-footer')];
   let cursor = 0.56;
   copy.forEach(el => { add(el, cursor, 'seq-rise'); cursor += 0.07; });
   let picture = cursor + 0.12;

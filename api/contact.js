@@ -1,4 +1,5 @@
 const situations = ['기획부터 필요한 프로젝트', '준비된 자료가 있는 프로젝트', '지속적인 제작 파트너십'];
+const services = ['브랜드·기업 웹사이트', '랜딩페이지 제작', 'UX 기획 · 화면설계', '디지털 디자인 및 브랜딩', '리뉴얼 / 유지보수', '기타 문의'];
 const email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 function scriptUrl() {
   try {
@@ -25,12 +26,13 @@ export default async function handler(req, res) {
   const message = typeof b.message === 'string' ? b.message.trim() : '';
   if (!message) return res.status(400).json({error:'invalid'});
   const phone = /^[+\d ()-]+$/.test(contact) && contact.replace(/\D/g,'').length >= 9 && contact.replace(/\D/g,'').length <= 15;
-  if (!name || name.length > 80 || /[\r\n\x00-\x1f]/.test(name) || contact.length > 160 || (!email.test(contact) && !phone) || /[\r\n]/.test(contact) || message.length > 3000 || b.consent !== 'yes' || !situations.includes(b.situation) || !/^[a-f0-9-]{36}$/.test(b.requestId || '')) return res.status(400).json({error:'invalid'});
+  const picked = Array.isArray(b.services) ? [...new Set(b.services.map(v => typeof v === 'string' ? v.trim() : '').filter(Boolean))] : [];
+  if (!name || name.length > 80 || /[\r\n\x00-\x1f]/.test(name) || contact.length > 160 || (!email.test(contact) && !phone) || /[\r\n]/.test(contact) || message.length > 3000 || b.consent !== 'yes' || !situations.includes(b.situation) || !picked.length || picked.length > services.length || picked.some(v => !services.includes(v)) || !/^[a-f0-9-]{36}$/.test(b.requestId || '')) return res.status(400).json({error:'invalid'});
   try {
     const result = await fetch(scriptUrl(), {
       method:'POST', signal:AbortSignal.timeout(10000),
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({name,contact,message,situation:b.situation,consent:'yes',website:'',requestId:b.requestId,secret:process.env.CONTACT_SHARED_SECRET})
+      body:JSON.stringify({name,contact,message,situation:b.situation,services:picked,consent:'yes',website:'',requestId:b.requestId,secret:process.env.CONTACT_SHARED_SECRET})
     });
     const data = await result.json();
     if (!result.ok || data.ok !== true) return res.status(data.error === 'rate_limited' ? 429 : 502).json({error:'delivery'});

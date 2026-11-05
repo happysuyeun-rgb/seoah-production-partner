@@ -10,10 +10,11 @@ if (form) {
     const contact = form.elements.contact.value.trim();
     const digits = contact.replace(/\D/g, '');
     const validContact = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contact) || (/^[+\d ()-]+$/.test(contact) && digits.length >= 9 && digits.length <= 15);
-    button.disabled = busy || !available || !form.elements.name.value.trim() || !validContact || !form.elements.message.value.trim() || !form.querySelector('input[name="inquiry-situation"]:checked') || !form.elements.consent.checked || !Array.from(form.elements).every(el => !el.willValidate || el.validity.valid);
+    const hasService = Boolean(form.querySelector('input[name="inquiry-service"]:checked'));
+    button.disabled = busy || !available || !form.elements.name.value.trim() || !validContact || !form.elements.message.value.trim() || !form.querySelector('input[name="inquiry-situation"]:checked') || !hasService || !form.elements.consent.checked || !Array.from(form.elements).every(el => !el.willValidate || el.validity.valid);
   }
   fetch('/api/contact', {cache:'no-store'}).then(r => r.ok ? r.json() : {}).then(data => {
-    if (data.enabled) { available = true; updateButton(); setStatus('모든 항목을 작성하고 개인정보 수집·이용에 동의하면 보낼 수 있습니다.'); }
+    if (data.enabled) { available = true; updateButton(); }
   }).catch(() => {});
   form.addEventListener('input', () => { requestId = undefined; form.elements.contact.setCustomValidity(''); updateButton(); });
   form.addEventListener('change', updateButton);
@@ -31,7 +32,9 @@ if (form) {
     input.setCustomValidity(validEmail || validPhone ? '' : '답변받을 이메일 또는 전화번호를 확인해 주세요.');
     if (!form.reportValidity()) { input.addEventListener('input', () => input.setCustomValidity(''), {once:true}); return; }
     requestId ||= crypto.randomUUID();
-    const payload = {name:fields.get('name'), contact, message:fields.get('message'), situation:fields.get('inquiry-situation'), consent:fields.get('consent'), website:fields.get('website'), requestId};
+    const services = fields.getAll('inquiry-service').map(String);
+    if (!services.length) { setStatus('필요한 서비스를 한 가지 이상 선택해 주세요.'); updateButton(); return; }
+    const payload = {name:fields.get('name'), contact, message:fields.get('message'), situation:fields.get('inquiry-situation'), services, consent:fields.get('consent'), website:fields.get('website'), requestId};
     busy = true; button.disabled = true; form.setAttribute('aria-busy','true');
     setStatus('문의 내용을 전송하고 있습니다…');
     try {
